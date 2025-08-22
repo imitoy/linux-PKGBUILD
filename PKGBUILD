@@ -6,6 +6,7 @@ pkgrel=1
 pkgdesc='Linux'
 url='https://github.com/archlinux/linux'
 arch=(
+  aarch64
   x86_64
 )
 license=(GPL-2.0-only)
@@ -47,6 +48,7 @@ source=(
   https://cdn.kernel.org/pub/linux/kernel/v${pkgver%%.*}.x/${_srcname}.tar.{xz,sign}
   $url/releases/download/$_srctag/linux-$_srctag.patch.zst{,.sig}
 )
+source_aarch64=(config.aarch64)
 source_x86_64=(config.x86_64)
 validpgpkeys=(
   ABAF11C65A2970B130ABE3C479BE3E4300411886  # Linus Torvalds
@@ -115,6 +117,9 @@ _package() {
     'scx-scheds: to use sched-ext schedulers'
     'wireless-regdb: to set the correct wireless channels of your country'
   )
+  optdepends_aarch64=(
+    "$pkgbase-dtbs: device tree binaries"
+  )
   provides=(
     KSMBD-MODULE
     NTSYNC-MODULE
@@ -165,6 +170,7 @@ _package-headers() {
 
   local karch
   case $CARCH in
+    aarch64) karch=arm64 ;;
     x86_64) karch=x86 ;;
     *) echo "Unknown CARCH $CARCH"; exit 1 ;;
   esac
@@ -276,10 +282,23 @@ _package-docs() {
   ln -sr "$builddir/Documentation" "$pkgdir/usr/share/doc/$pkgbase"
 }
 
+_package-dtbs() {
+  pkgdesc="Device tree binaries for the $pkgdesc kernel"
+  arch=(aarch64)
+
+  cd $_srcname
+  local dtbdir="$pkgdir/boot/dtb"
+
+  echo "Installing device tree binaries..."
+  mkdir -p "$dtbdir"
+  make INSTALL_DTBS_PATH="$dtbdir" dtbs_install
+}
+
 pkgname=(
   "$pkgbase"
   "$pkgbase-headers"
   "$pkgbase-docs"
+  "$pkgbase-dtbs"
 )
 for _p in "${pkgname[@]}"; do
   eval "package_$_p() {
