@@ -3,6 +3,7 @@ pkgbase = linux
 	pkgver = 6.19.11.arch1
 	pkgrel = 1
 	url = https://github.com/archlinux/linux
+	arch = aarch64
 	arch = x86_64
 	license = GPL-2.0-only
 	makedepends = bc
@@ -46,6 +47,8 @@ pkgbase = linux
 	b2sums = SKIP
 	b2sums = ac650a52c9097c0fa275742ff56add141677cfe8fe4c8459151eba73991a65c9bfdd072b5f9f139c7167352ec03d71562c5567b72f80ab00ccda5fac5b406b1e
 	b2sums = SKIP
+	source_aarch64 = config.aarch64
+	b2sums_aarch64 = e1ea8336d4dec097bdbcfd313b3f8212d416fbb9e39a8a2a7d822ed85984c9208e9c0d4719ea73198e9d514205f0df9ff543f3412bd3b41be2826294ded275f7
 	source_x86_64 = config.x86_64
 	b2sums_x86_64 = abc8a043a7b11fbc6c8272725070376500731eb42bfe6bef99141ef2f78c8ae926e1ac188c468d8c5f5f5da39a770b12b8c59c5f324ab647809b45f7683d8aee
 
@@ -64,6 +67,7 @@ pkgname = linux
 	provides = WIREGUARD-MODULE
 	replaces = virtualbox-guest-modules-arch
 	replaces = wireguard-arch
+	optdepends_aarch64 = linux-dtbs: device tree binaries
 
 pkgname = linux-headers
 	pkgdesc = Headers and scripts for building modules for the Linux kernel
@@ -80,3 +84,7 @@ pkgname = linux-headers
 
 pkgname = linux-docs
 	pkgdesc = Documentation for the Linux kernel
+
+pkgname = linux-dtbs
+	pkgdesc = Device tree binaries for the Linux kernel
+	arch = aarch64

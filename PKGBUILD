@@ -6,6 +6,7 @@ pkgrel=1
 pkgdesc='Linux'
 url='https://github.com/archlinux/linux'
 arch=(
+  aarch64
   x86_64
 )
 license=(GPL-2.0-only)
@@ -47,23 +48,27 @@ source=(
   https://cdn.kernel.org/pub/linux/kernel/v${pkgver%%.*}.x/${_srcname}.tar.{xz,sign}
   $url/releases/download/$_srctag/linux-$_srctag.patch.zst{,.sig}
 )
+source_aarch64=(config.aarch64)
 source_x86_64=(config.x86_64)
 validpgpkeys=(
   ABAF11C65A2970B130ABE3C479BE3E4300411886  # Linus Torvalds
   647F28654894E3BD457199BE38DBBDC86092693E  # Greg Kroah-Hartman
   83BC8889351B5DEBBB68416EB8AC08600F108CDF  # Jan Alexander Steffens (heftig)
 )
-b2sums=('7304717954b8ad9eec54071d28d2d6c9af108d2c84686cee9b401e38078d4b39810541a854e458c85349de10959d96edb2ba7e38b0e0a7ebc46949e69e7816b3'
-        'SKIP'
-        'ac650a52c9097c0fa275742ff56add141677cfe8fe4c8459151eba73991a65c9bfdd072b5f9f139c7167352ec03d71562c5567b72f80ab00ccda5fac5b406b1e'
-        'SKIP')
-b2sums_x86_64=('abc8a043a7b11fbc6c8272725070376500731eb42bfe6bef99141ef2f78c8ae926e1ac188c468d8c5f5f5da39a770b12b8c59c5f324ab647809b45f7683d8aee')
-
-# https://www.kernel.org/pub/linux/kernel/v6.x/sha256sums.asc
 sha256sums=('20039d7b6b256c08be2f8fac43c3ff9a620308c703c643cf2f80c3910b9bd59b'
             'SKIP'
             '3870301a5afec914900612e99cd499dac775d059ea52cee9c6eafc3853b995f1'
             'SKIP')
+sha256sums_aarch64=('fa10d70917d07abe85c6553e48154d511755bf3de1281e1273663e19d256cc52')
+sha256sums_x86_64=('e70d2e3e09875efa54940d33c9f953a7f6b4c25b1ef9acd25836547c5d0b9577')
+b2sums=('7304717954b8ad9eec54071d28d2d6c9af108d2c84686cee9b401e38078d4b39810541a854e458c85349de10959d96edb2ba7e38b0e0a7ebc46949e69e7816b3'
+        'SKIP'
+        'ac650a52c9097c0fa275742ff56add141677cfe8fe4c8459151eba73991a65c9bfdd072b5f9f139c7167352ec03d71562c5567b72f80ab00ccda5fac5b406b1e'
+        'SKIP')
+b2sums_aarch64=('e1ea8336d4dec097bdbcfd313b3f8212d416fbb9e39a8a2a7d822ed85984c9208e9c0d4719ea73198e9d514205f0df9ff543f3412bd3b41be2826294ded275f7')
+b2sums_x86_64=('abc8a043a7b11fbc6c8272725070376500731eb42bfe6bef99141ef2f78c8ae926e1ac188c468d8c5f5f5da39a770b12b8c59c5f324ab647809b45f7683d8aee')
+
+# https://www.kernel.org/pub/linux/kernel/v6.x/sha256sums.asc
 
 export KBUILD_BUILD_HOST=archlinux
 export KBUILD_BUILD_USER=$pkgbase
@@ -115,6 +120,9 @@ _package() {
     'scx-scheds: to use sched-ext schedulers'
     'wireless-regdb: to set the correct wireless channels of your country'
   )
+  optdepends_aarch64=(
+    "$pkgbase-dtbs: device tree binaries"
+  )
   provides=(
     KSMBD-MODULE
     NTSYNC-MODULE
@@ -165,6 +173,7 @@ _package-headers() {
 
   local karch
   case $CARCH in
+    aarch64) karch=arm64 ;;
     x86_64) karch=x86 ;;
     *) echo "Unknown CARCH $CARCH"; exit 1 ;;
   esac
@@ -276,10 +285,23 @@ _package-docs() {
   ln -sr "$builddir/Documentation" "$pkgdir/usr/share/doc/$pkgbase"
 }
 
+_package-dtbs() {
+  pkgdesc="Device tree binaries for the $pkgdesc kernel"
+  arch=(aarch64)
+
+  cd $_srcname
+  local dtbdir="$pkgdir/boot/dtb"
+
+  echo "Installing device tree binaries..."
+  mkdir -p "$dtbdir"
+  make INSTALL_DTBS_PATH="$dtbdir" dtbs_install
+}
+
 pkgname=(
   "$pkgbase"
   "$pkgbase-headers"
   "$pkgbase-docs"
+  "$pkgbase-dtbs"
 )
 for _p in "${pkgname[@]}"; do
   eval "package_$_p() {
