@@ -86,6 +86,10 @@ prepare() {
     patch -Np1 < "../$src"
   done
 
+  echo "Applying patch Legion Audio..."
+  git clone https://github.com/nadimkobeissi/16iax10h-linux-sound-saga.git
+  patch -Np1 < 16iax10h-linux-sound-saga/fix/patches/16iax10h-audio-linux-6.19.11.patch
+
   echo "Setting config..."
   cp ../config.$CARCH .config
   make olddefconfig
