@@ -28,6 +28,12 @@ jobs:
           
           chown -R builder:builder .
 
+      - name: Import GPG keys
+        run: |
+          # 38DBBDC86092693E - Greg Kroah-Hartman
+          # B8AC08600F108CDF - Jan Alexander Steffens
+          sudo -u builder gpg --keyserver keyserver.ubuntu.com --recv-keys 38DBBDC86092693E B8AC08600F108CDF
+
       - name: Build Package
         run: |
           sudo -u builder makepkg -sc --noconfirm
