@@ -1,0 +1,50 @@
+name: Build Arch Linux Package
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'PKGBUILD'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:latest
+      options: --privileged
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Initialize System & Dependencies
+        run: |
+          pacman -Syu --noconfirm base-devel git
+          
+          useradd builder -m
+          passwd -d builder
+          printf 'builder ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/builder
+          
+          chown -R builder:builder .
+
+      - name: Build Package
+        run: |
+          sudo -u builder makepkg -sc --noconfirm
+
+      - name: Generate Repo Database
+        run: |
+          repo-add custom_repo.db.tar.gz *.pkg.tar.zst
+
+      - name: Upload to Release
+        uses: softprops/action-gh-release@v2
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        with:
+          tag_name: latest
+          files: |
+            *.pkg.tar.zst
+            custom_repo.db.tar.gz
+            custom_repo.db
+            custom_repo.files
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
