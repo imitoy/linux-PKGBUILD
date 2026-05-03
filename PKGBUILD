@@ -14,6 +14,7 @@ makedepends=(
   binutils
   cpio
   gettext
+  git
   glibc
   libelf
   libgcc
@@ -44,6 +45,7 @@ options=(
 _srcname=linux-${pkgver%.*}
 _srctag=v${pkgver%.*}-${pkgver##*.}
 source=(
+  git+https://github.com/marco-giunta/legion-pro7-gen10-audio.git
   https://cdn.kernel.org/pub/linux/kernel/v${pkgver%%.*}.x/${_srcname}.tar.{xz,sign}
   $url/releases/download/$_srctag/linux-$_srctag.patch.zst{,.sig}
 )
@@ -53,14 +55,16 @@ validpgpkeys=(
   647F28654894E3BD457199BE38DBBDC86092693E  # Greg Kroah-Hartman
   83BC8889351B5DEBBB68416EB8AC08600F108CDF  # Jan Alexander Steffens (heftig)
 )
-b2sums=('51eebd3aa3c64779308b0781818fd91921c1a7b0c3ffd361dbff01f8853f1cea7d4c70f6ee2ae3b7817aeca7605b63f12b0fa422d22c0a50fb2306553c49eda4'
+b2sums=('SKIP'
+        '51eebd3aa3c64779308b0781818fd91921c1a7b0c3ffd361dbff01f8853f1cea7d4c70f6ee2ae3b7817aeca7605b63f12b0fa422d22c0a50fb2306553c49eda4'
         'SKIP'
         'ad245fe70556a42c94d6f16b7c276a476bfb1ed5811a5030d7fefa3f5f226dd722f61c55cb9b76f5ff42082a6cbf88e04dc616adecc91131b68fe59cbed59035'
         'SKIP')
 b2sums_x86_64=('dafee1f25d231199834869a5ce76a85eebb3c1ceac86f604270e93a40a22f29bcf797822481aff5aa5020c12359b9ad87ad8e0d36727166522510a07539d69d4')
 
 # https://www.kernel.org/pub/linux/kernel/v6.x/sha256sums.asc
-sha256sums=('0bedadbf5788693ddebbcc913c893f1a97349af79ddde7144c2a80b401959f1c'
+sha256sums=('SKIP'
+            '0bedadbf5788693ddebbcc913c893f1a97349af79ddde7144c2a80b401959f1c'
             'SKIP'
             '991b9f1001aa357c84d1d463e4d9377e7cbfdd010e142a106bc5dab0a4f30b7d'
             'SKIP')
@@ -85,12 +89,13 @@ prepare() {
     echo "Applying patch $src..."
     patch -Np1 < "../$src"
   done
-
+  
   echo "Applying patch Legion Audio..."
-  git clone https://github.com/nadimkobeissi/16iax10h-linux-sound-saga.git
-  patch -Np1 < 16iax10h-linux-sound-saga/fix/patches/16iax10h-audio-linux-6.19.11.patch
+  find ../legion-pro7-gen10-audio/upstream -name "*.patch" -type f | sort | while read patch_file; do
+    echo "Applying $patch_file"
+    patch -Np1 < "$patch_file" || true
+  done
 
-  echo "Setting config..."
   cp ../config.$CARCH .config
   make olddefconfig
   diff -u ../config.$CARCH .config || :
