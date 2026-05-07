@@ -93,7 +93,7 @@ prepare() {
   echo "Applying patch Legion Audio..."
   find ../legion-pro7-gen10-audio/upstream -name "*.patch" -type f | sort | while read patch_file; do
     echo "Applying $patch_file"
-    patch -Np1 < "$patch_file" || true
+    patch -Np1 < "$patch_file"
   done
 
   cp -f ../../alc269.c sound/hda/codecs/realtek/alc269.c
@@ -101,6 +101,14 @@ prepare() {
   cp ../config.$CARCH .config
   make olddefconfig
   diff -u ../config.$CARCH .config || :
+
+  echo "CONFIG_SND_HDA_SCODEC_AW88399=m
+CONFIG_SND_HDA_SCODEC_AW88399_I2C=m
+CONFIG_SND_SOC_AW88399=m
+CONFIG_SND_SOC_SOF_INTEL_TOPLEVEL=y
+CONFIG_SND_SOC_SOF_INTEL_COMMON=m
+CONFIG_SND_SOC_SOF_INTEL_MTL=m
+CONFIG_SND_SOC_SOF_INTEL_LNL=m" >> .config
 
   make -s kernelrelease > version
   echo "Prepared $pkgbase version $(<version)"
