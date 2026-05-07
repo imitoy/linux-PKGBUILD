@@ -96,6 +96,8 @@ prepare() {
     patch -Np1 < "$patch_file" || true
   done
 
+  cp -f ../../alc269.c sound/hda/codecs/realtek/alc269.c
+
   cp ../config.$CARCH .config
   make olddefconfig
   diff -u ../config.$CARCH .config || :
