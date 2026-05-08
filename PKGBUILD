@@ -93,7 +93,7 @@ prepare() {
   echo "Applying patch Legion Audio..."
   find ../legion-pro7-gen10-audio/upstream -name "*.patch" -type f | sort | while read patch_file; do
     echo "Applying $patch_file"
-    patch -Np1 < "$patch_file"
+    patch -Np1 < "$patch_file" || true
   done
 
   cp -f ../../alc269.c sound/hda/codecs/realtek/alc269.c
