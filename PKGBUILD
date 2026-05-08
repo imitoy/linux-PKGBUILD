@@ -91,7 +91,7 @@ prepare() {
   done
   
   echo "Applying patch Legion Audio..."
-  find ../legion-pro7-gen10-audio/upstream -name "*.patch" -type f | sort | while read patch_file; do
+  find ../legion-pro7-gen10-audio/upstream/series/v0.2/ -name "*.patch" -type f | sort | while read patch_file; do
     echo "Applying $patch_file"
     patch -Np1 < "$patch_file" || true
   done
