@@ -90,11 +90,16 @@ prepare() {
     patch -Np1 < "../$src"
   done
   
-  echo "Applying patch Legion Audio..."
-  find ../legion-pro7-gen10-audio/upstream -name "*.patch" -type f | sort | while read patch_file; do
-    echo "Applying $patch_file"
-    patch -Np1 < "$patch_file"
+  echo "Applying patch Legion Audio series v0.2..."
+  local _patch
+  for _patch in ../legion-pro7-gen10-audio/upstream/series/v0.2/000[1-6]-*.patch; do
+    echo "Applying $(basename $_patch)..."
+    patch -Np1 < "$_patch"
   done
+  # Patch 7 (alc269 fixups) - only apply aw88399_hda_property.c changes
+  # alc269.c changes are handled by the custom alc269.c copy below
+  echo "Applying 0007 aw88399_hda_property.c..."
+  patch -Np1 -i "../legion-pro7-gen10-audio/upstream/series/v0.2/0007-ALSA-hda-realtek-enable-AW88399-on-Lenovo-Legion-Pro.patch" -r /dev/null 2>/dev/null || true
 
   cp -f ../../alc269.c sound/hda/codecs/realtek/alc269.c
 
