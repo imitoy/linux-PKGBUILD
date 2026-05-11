@@ -90,9 +90,9 @@ prepare() {
     patch -Np1 < "../$src"
   done
   
-  echo "Applying patch Legion Audio series v0.2..."
+  echo "Applying patch Legion Audio series v0.2.1..."
   local _patch
-  for _patch in ../legion-pro7-gen10-audio/upstream/series/v0.2/000[1-6]-*.patch; do
+  for _patch in ../legion-pro7-gen10-audio/upstream/series/v0.2.1/000[1-6]-*.patch; do
     echo "Applying $(basename $_patch)..."
     patch -Np1 < "$_patch"
   done
