@@ -40,6 +40,12 @@ jobs:
         run: |
           sudo -u builder makepkg -sc --noconfirm
 
+      - name: Extract version from PKGBUILD
+        id: get_version
+        run: |
+          source ./PKGBUILD
+          echo "VERSION=${pkgver}-${pkgrel}" >> $GITHUB_OUTPUT
+
       - name: Generate Repo Database
         run: |
           repo-add custom_repo.db.tar.gz *.pkg.tar.zst
@@ -48,7 +54,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         with:
-          tag_name: latest
+          tag_name: v${{ steps.get_version.outputs.VERSION }}
           files: |
             *.pkg.tar.zst
             custom_repo.db.tar.gz
