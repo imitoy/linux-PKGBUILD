@@ -3262,7 +3262,11 @@ static void aw88399_fixup_i2c_two(struct hda_codec *cdc, const struct hda_fixup 
 static void alc287_fixup_legion_16iax10h_aw88399(struct hda_codec *codec,
 						 const struct hda_fixup *fix, int action)
 {
+	/*
+	 * The bass speaker pin 0x17 is wrongly reported as unconnected on some models.
+	 */
 	static const struct hda_pintbl pincfgs[] = {
+		{ 0x17, 0x90170111 }, /* bass speaker */
 		{ 0x1d, 0x411111f0 }, /* unused bogus pin */
 		{ }
 	};
@@ -7725,6 +7729,7 @@ static const struct hda_quirk alc269_fixup_tbl[] = {
 	SND_PCI_QUIRK(0x17aa, 0x3902, "Lenovo E50-80", ALC269_FIXUP_DMIC_THINKPAD_ACPI),
 	SND_PCI_QUIRK(0x17aa, 0x3906, "Legion Pro 7i 16IAX10H", ALC287_FIXUP_LENOVO_LEGION_AW88399),
 	SND_PCI_QUIRK(0x17aa, 0x3907, "Legion Pro 7i 16IAX10H", ALC287_FIXUP_LENOVO_LEGION_AW88399),
+	SND_PCI_QUIRK(0x17aa, 0x3908, "Legion Pro 5 16IAX10H", ALC287_FIXUP_LENOVO_LEGION_AW88399),
 	SND_PCI_QUIRK(0x17aa, 0x390d, "Lenovo Yoga Pro 7 14ASP10", ALC287_FIXUP_YOGA9_14IAP7_BASS_SPK_PIN),
 	SND_PCI_QUIRK(0x17aa, 0x3911, "Lenovo Yoga Pro 7 14IAH10", ALC287_FIXUP_YOGA9_14IAP7_BASS_SPK_PIN),
 	SND_PCI_QUIRK(0x17aa, 0x3913, "Lenovo 145", ALC236_FIXUP_LENOVO_INV_DMIC),
@@ -7738,7 +7743,7 @@ static const struct hda_quirk alc269_fixup_tbl[] = {
 	SND_PCI_QUIRK(0x17aa, 0x3977, "IdeaPad S210", ALC283_FIXUP_INT_MIC),
 	SND_PCI_QUIRK(0x17aa, 0x3978, "Lenovo B50-70", ALC269_FIXUP_DMIC_THINKPAD_ACPI),
 	SND_PCI_QUIRK(0x17aa, 0x3bf8, "Quanta FL1", ALC269_FIXUP_PCM_44K),
-	SND_PCI_QUIRK(0x17aa, 0x3d6c, "Legion Y9000P IAX10", ALC287_FIXUP_LENOVO_LEGION_AW88399),
+	SND_PCI_QUIRK(0x17aa, 0x3d6c, "Legion Pro 7i 16IAX10H / Y9000P IAX10", ALC287_FIXUP_LENOVO_LEGION_AW88399),
 	SND_PCI_QUIRK(0x17aa, 0x5013, "Thinkpad", ALC269_FIXUP_LIMIT_INT_MIC_BOOST),
 	SND_PCI_QUIRK(0x17aa, 0x501a, "Thinkpad", ALC283_FIXUP_INT_MIC),
 	SND_PCI_QUIRK(0x17aa, 0x501e, "Thinkpad L440", ALC292_FIXUP_TPT440_DOCK),
@@ -8022,6 +8027,7 @@ static const struct hda_model_fixup alc269_fixup_models[] = {
 	{.id = ALC236_FIXUP_LENOVO_INV_DMIC, .name = "alc236-fixup-lenovo-inv-mic"},
 	{.id = ALC2XX_FIXUP_HEADSET_MIC, .name = "alc2xx-fixup-headset-mic"},
 	{.id = ALC245_FIXUP_BASS_HP_DAC, .name = "alc245-fixup-bass-hp-dac"},
+	{.id = ALC287_FIXUP_LENOVO_LEGION_AW88399, .name = "alc287-lenovo-legion-aw88399"},
 	{}
 };
 #define ALC225_STANDARD_PINS \
