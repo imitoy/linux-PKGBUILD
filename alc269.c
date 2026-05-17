@@ -3254,38 +3254,34 @@ static void find_cirrus_companion_amps(struct hda_codec *cdc)
 	comp_generic_fixup(cdc, HDA_FIXUP_ACT_PRE_PROBE, bus, acpi_ids[i].hid, match, count);
 }
 
-static void aw88399_fixup_i2c_two(struct hda_codec *cdc, const struct hda_fixup *fix, int action)
-{
-	comp_generic_fixup(cdc, action, "i2c", "AWDZ8399", "-%s:00-aw88399-hda.%d", 2);
-}
-
-static void alc287_fixup_legion_16iax10h_aw88399(struct hda_codec *codec,
-						 const struct hda_fixup *fix, int action)
-{
-	/*
-	 * The bass speaker pin 0x17 is wrongly reported as unconnected on some models.
-	 */
-	static const struct hda_pintbl pincfgs[] = {
-		{ 0x17, 0x90170111 }, /* bass speaker */
-		{ 0x1d, 0x411111f0 }, /* unused bogus pin */
-		{ }
-	};
-
-	/*
-	 * Force DAC 0x02 for the bass speaker 0x17, as the default 0x06 lacks volume controls.
-	 */
-	static const hda_nid_t conn[] = { 0x02 };
-
-	alc269_fixup_limit_int_mic_boost(codec, fix, action);
-
-	switch (action) {
-	case HDA_FIXUP_ACT_PRE_PROBE:
-		snd_hda_apply_pincfgs(codec, pincfgs);
-		snd_hda_override_conn_list(codec, 0x17, ARRAY_SIZE(conn), conn);
-		break;
-	}
-}
-
++static void aw88399_fixup_i2c_two(struct hda_codec *cdc, const struct hda_fixup *fix, int action)
++{
++	comp_generic_fixup(cdc, action, "i2c", "AWDZ8399", "-%s:00-aw88399-hda.%d", 2);
++}
++
++static void alc287_fixup_legion_16iax10h_aw88399(struct hda_codec *codec,
++						 const struct hda_fixup *fix, int action)
++{
++	static const struct hda_pintbl pincfgs[] = {
++		{ 0x1d, 0x411111f0 }, /* unused bogus pin */
++		{ }
++	};
++
++	/*
++	 * Force DAC 0x02 for the bass speaker 0x17, as the default 0x06 lacks volume controls.
++	 */
++	static const hda_nid_t conn[] = { 0x02 };
++
++	alc269_fixup_limit_int_mic_boost(codec, fix, action);
++
++	switch (action) {
++	case HDA_FIXUP_ACT_PRE_PROBE:
++		snd_hda_apply_pincfgs(codec, pincfgs);
++		snd_hda_override_conn_list(codec, 0x17, ARRAY_SIZE(conn), conn);
++		break;
++	}
++}
++
 
 
 static void cs35l41_fixup_i2c_two(struct hda_codec *cdc, const struct hda_fixup *fix, int action)
@@ -3429,6 +3425,19 @@ static void alc256_fixup_mic_no_presence_and_resume(struct hda_codec *codec,
 	} else {
 		snd_hda_codec_set_pincfg(codec, 0x1a, 0x04a1113c);
 	}
+}
+
+static void alc256_fixup_xiaomi_pro15_resume(struct hda_codec *codec,
+					     const struct hda_fixup *fix,
+					     int action)
+{
+	/*
+	 * On the Xiaomi Mi Laptop Pro 15 (TM1905, SSID 1d72:1905) the ALC256
+	 * codec sets coefficient 0x10 bit 9 to 1 after S3 resume, silencing
+	 * the internal speaker. Bluetooth and HDMI audio are unaffected.
+	 * Clear the bit so the speaker keeps working across suspend cycles.
+	 */
+	alc_update_coef_idx(codec, 0x10, 1<<9, 0);
 }
 
 static void alc256_decrease_headphone_amp_val(struct hda_codec *codec,
@@ -4088,6 +4097,7 @@ enum {
 	ALC256_FIXUP_SYSTEM76_MIC_NO_PRESENCE,
 	ALC233_FIXUP_NO_AUDIO_JACK,
 	ALC256_FIXUP_MIC_NO_PRESENCE_AND_RESUME,
+	ALC256_FIXUP_XIAOMI_PRO15_RESUME,
 	ALC285_FIXUP_LEGION_Y9000X_SPEAKERS,
 	ALC285_FIXUP_LEGION_Y9000X_AUTOMUTE,
 	ALC287_FIXUP_LEGION_16ACHG6,
@@ -4158,8 +4168,8 @@ enum {
 	ALC245_FIXUP_ACER_MICMUTE_LED,
 	ALC245_FIXUP_CS35L41_I2C_2_MUTE_LED,
 	ALC236_FIXUP_HP_DMIC,
-	ALC287_FIXUP_AW88399_I2C_2,
-	ALC287_FIXUP_LENOVO_LEGION_AW88399,
++	ALC287_FIXUP_AW88399_I2C_2,
++	ALC287_FIXUP_LENOVO_LEGION_AW88399,
 };
 
 /* A special fixup for Lenovo C940 and Yoga Duet 7;
@@ -6277,6 +6287,10 @@ static const struct hda_fixup alc269_fixups[] = {
 		.chained = true,
 		.chain_id = ALC269_FIXUP_HEADSET_MODE_NO_HP_MIC
 	},
+	[ALC256_FIXUP_XIAOMI_PRO15_RESUME] = {
+		.type = HDA_FIXUP_FUNC,
+		.v.func = alc256_fixup_xiaomi_pro15_resume,
+	},
 	[ALC287_FIXUP_LEGION_16ACHG6] = {
 		.type = HDA_FIXUP_FUNC,
 		.v.func = alc287_fixup_legion_16achg6_speakers,
@@ -6703,16 +6717,16 @@ static const struct hda_fixup alc269_fixups[] = {
 			{ }
 		},
 	},
-	[ALC287_FIXUP_AW88399_I2C_2] = {
-		.type = HDA_FIXUP_FUNC,
-		.v.func = aw88399_fixup_i2c_two,
-	},
-	[ALC287_FIXUP_LENOVO_LEGION_AW88399] = {
-		.type = HDA_FIXUP_FUNC,
-		.v.func = alc287_fixup_legion_16iax10h_aw88399,
-		.chained = true,
-		.chain_id = ALC287_FIXUP_AW88399_I2C_2,
-	}
++	[ALC287_FIXUP_AW88399_I2C_2] = {
++		.type = HDA_FIXUP_FUNC,
++		.v.func = aw88399_fixup_i2c_two,
++	},
++	[ALC287_FIXUP_LENOVO_LEGION_AW88399] = {
++		.type = HDA_FIXUP_FUNC,
++		.v.func = alc287_fixup_legion_16iax10h_aw88399,
++		.chained = true,
++		.chain_id = ALC287_FIXUP_AW88399_I2C_2,
++	},
 };
 
 static const struct hda_quirk alc269_fixup_tbl[] = {
@@ -7727,9 +7741,8 @@ static const struct hda_quirk alc269_fixup_tbl[] = {
 	SND_PCI_QUIRK(0x17aa, 0x38fa, "Thinkbook 16P Gen5", ALC287_FIXUP_MG_RTKC_CSAMP_CS35L41_I2C_THINKPAD),
 	SND_PCI_QUIRK(0x17aa, 0x38fd, "ThinkBook plus Gen5 Hybrid", ALC287_FIXUP_TAS2781_I2C),
 	SND_PCI_QUIRK(0x17aa, 0x3902, "Lenovo E50-80", ALC269_FIXUP_DMIC_THINKPAD_ACPI),
-	SND_PCI_QUIRK(0x17aa, 0x3906, "Legion Pro 7i 16IAX10H", ALC287_FIXUP_LENOVO_LEGION_AW88399),
-	SND_PCI_QUIRK(0x17aa, 0x3907, "Legion Pro 7i 16IAX10H", ALC287_FIXUP_LENOVO_LEGION_AW88399),
-	SND_PCI_QUIRK(0x17aa, 0x3908, "Legion Pro 5 16IAX10H", ALC287_FIXUP_LENOVO_LEGION_AW88399),
++	SND_PCI_QUIRK(0x17aa, 0x3906, "Legion Pro 7i 16IAX10H", ALC287_FIXUP_LENOVO_LEGION_AW88399),
++	SND_PCI_QUIRK(0x17aa, 0x3907, "Legion Pro 7i 16IAX10H", ALC287_FIXUP_LENOVO_LEGION_AW88399),
 	SND_PCI_QUIRK(0x17aa, 0x390d, "Lenovo Yoga Pro 7 14ASP10", ALC287_FIXUP_YOGA9_14IAP7_BASS_SPK_PIN),
 	SND_PCI_QUIRK(0x17aa, 0x3911, "Lenovo Yoga Pro 7 14IAH10", ALC287_FIXUP_YOGA9_14IAP7_BASS_SPK_PIN),
 	SND_PCI_QUIRK(0x17aa, 0x3913, "Lenovo 145", ALC236_FIXUP_LENOVO_INV_DMIC),
@@ -7738,12 +7751,12 @@ static const struct hda_quirk alc269_fixup_tbl[] = {
 	SND_PCI_QUIRK(0x17aa, 0x3920, "Yoga S990-16 pro Quad VECO Quad", ALC287_FIXUP_TXNW2781_I2C),
 	SND_PCI_QUIRK(0x17aa, 0x3929, "Thinkbook 13x Gen 5", ALC287_FIXUP_MG_RTKC_CSAMP_CS35L41_I2C_THINKPAD),
 	SND_PCI_QUIRK(0x17aa, 0x392b, "Thinkbook 13x Gen 5", ALC287_FIXUP_MG_RTKC_CSAMP_CS35L41_I2C_THINKPAD),
-	SND_PCI_QUIRK(0x17aa, 0x3938, "Legion Pro 7 16AFR10H", ALC287_FIXUP_LENOVO_LEGION_AW88399),
-	SND_PCI_QUIRK(0x17aa, 0x3939, "Legion Pro 7 16AFR10H", ALC287_FIXUP_LENOVO_LEGION_AW88399),
++	SND_PCI_QUIRK(0x17aa, 0x3938, "Legion Pro 7 16AFR10H", ALC287_FIXUP_LENOVO_LEGION_AW88399),
++	SND_PCI_QUIRK(0x17aa, 0x3939, "Legion Pro 7 16AFR10H", ALC287_FIXUP_LENOVO_LEGION_AW88399),
 	SND_PCI_QUIRK(0x17aa, 0x3977, "IdeaPad S210", ALC283_FIXUP_INT_MIC),
 	SND_PCI_QUIRK(0x17aa, 0x3978, "Lenovo B50-70", ALC269_FIXUP_DMIC_THINKPAD_ACPI),
 	SND_PCI_QUIRK(0x17aa, 0x3bf8, "Quanta FL1", ALC269_FIXUP_PCM_44K),
-	SND_PCI_QUIRK(0x17aa, 0x3d6c, "Legion Pro 7i 16IAX10H / Y9000P IAX10", ALC287_FIXUP_LENOVO_LEGION_AW88399),
++	SND_PCI_QUIRK(0x17aa, 0x3d6c, "Legion Pro 7i 16IAX10H / Y9000P IAX10", ALC287_FIXUP_LENOVO_LEGION_AW88399),
 	SND_PCI_QUIRK(0x17aa, 0x5013, "Thinkpad", ALC269_FIXUP_LIMIT_INT_MIC_BOOST),
 	SND_PCI_QUIRK(0x17aa, 0x501a, "Thinkpad", ALC283_FIXUP_INT_MIC),
 	SND_PCI_QUIRK(0x17aa, 0x501e, "Thinkpad L440", ALC292_FIXUP_TPT440_DOCK),
@@ -7803,6 +7816,7 @@ static const struct hda_quirk alc269_fixup_tbl[] = {
 	SND_PCI_QUIRK(0x1d72, 0x1602, "RedmiBook", ALC255_FIXUP_XIAOMI_HEADSET_MIC),
 	SND_PCI_QUIRK(0x1d72, 0x1701, "XiaomiNotebook Pro", ALC298_FIXUP_DELL1_MIC_NO_PRESENCE),
 	SND_PCI_QUIRK(0x1d72, 0x1901, "RedmiBook 14", ALC256_FIXUP_ASUS_HEADSET_MIC),
+	SND_PCI_QUIRK(0x1d72, 0x1905, "Xiaomi Mi Laptop Pro 15", ALC256_FIXUP_XIAOMI_PRO15_RESUME),
 	SND_PCI_QUIRK(0x1d72, 0x1945, "Redmi G", ALC256_FIXUP_ASUS_HEADSET_MIC),
 	SND_PCI_QUIRK(0x1d72, 0x1947, "RedmiBook Air", ALC255_FIXUP_XIAOMI_HEADSET_MIC),
 	SND_PCI_QUIRK(0x1e39, 0xca14, "MEDION NM14LNL", ALC233_FIXUP_MEDION_MTL_SPK),
@@ -8027,7 +8041,8 @@ static const struct hda_model_fixup alc269_fixup_models[] = {
 	{.id = ALC236_FIXUP_LENOVO_INV_DMIC, .name = "alc236-fixup-lenovo-inv-mic"},
 	{.id = ALC2XX_FIXUP_HEADSET_MIC, .name = "alc2xx-fixup-headset-mic"},
 	{.id = ALC245_FIXUP_BASS_HP_DAC, .name = "alc245-fixup-bass-hp-dac"},
-	{.id = ALC287_FIXUP_LENOVO_LEGION_AW88399, .name = "alc287-lenovo-legion-aw88399"},
++	{.id = ALC287_FIXUP_AW88399_I2C_2, .name = "aw88399-i2c-2"},
++	{.id = ALC287_FIXUP_LENOVO_LEGION_AW88399, .name = "alc287-lenovo-legion-aw88399"},
 	{}
 };
 #define ALC225_STANDARD_PINS \
