@@ -1,7 +1,7 @@
 # Maintainer: Jan Alexander Steffens (heftig) <heftig@archlinux.org>
 
 pkgbase=linux
-pkgver=7.0.10.arch1
+pkgver=7.0.11.arch1
 pkgrel=1
 pkgdesc='Linux'
 url='https://github.com/archlinux/linux'
@@ -56,17 +56,17 @@ validpgpkeys=(
   83BC8889351B5DEBBB68416EB8AC08600F108CDF  # Jan Alexander Steffens (heftig)
 )
 b2sums=('SKIP'
-        '08dc26e2247186fbfee32ee3251174f8a2e68c6ed6118c0713cb87bb66d427c85b6ae2367af053b158d9ad0d9aaf0846bdebddf84c30558fec89e68ba0dc0957'
+        'e198c4edf9cc681c602e4c0bd8d92ff9d93433c95a525d8d94e5ad59aa9da2299a5048690841263e925835e3960d621fab137afd3522020f58d4fe1a09041ac7'
         'SKIP'
-        '0701e826f811a79123f89c0d034cb753d3a6237ee5e387c8c927efc1114dbeac6ef095e88eedecf18b9d69fcefa605b2425ffb119c5e40026e388464f75c350e'
+        '17d5fbaf51a1930dbacadcf3eacc286e471e44fd1526516b7fa51f7e83b62c9d24e69e1cf9c5c111288160964b8e44d1138306de2ebc84b242e33f09d6d6e13a'
         'SKIP')
-b2sums_x86_64=('9a8ec4b0411ff9ac6fb33eaa4999eaf4b8ba9af407fa3c9d3c35722427c66c52042b2c1d136edbb27ead16f05f825bfb86d78a22c3177c98acdfdd7936a71575')
+b2sums_x86_64=('a3569058fb5d86df604568f3746c98285b23bd5f4d69abc34df84e05b29c73b4a2c55f589259ec7375591c825d09525bf7d4f5c29d5e3a5209dfaabaf834795a')
 
-# https://www.kernel.org/pub/linux/kernel/v6.x/sha256sums.asc
 sha256sums=('SKIP'
-            '094977eb62c20e3d1939fe81a92958a1f987f339446e532fa86963b2804e32dc'
+            # https://www.kernel.org/pub/linux/kernel/v6.x/sha256sums.asc
+            'e56c8356dda01136a6041c6ef832bd0ec99bd2d35dff97832aa5ec10ed014304'
             'SKIP'
-            '5aa17c8f41de0cfe212cdbaf97be5cddf304f08bd558b6763c41611cd73c3698'
+            '694e74e08031d1388c0ae7ba3e44d9dfcb1888ed45ae1eb97f9c4160953042e5'
             'SKIP')
 
 export KBUILD_BUILD_HOST=archlinux
