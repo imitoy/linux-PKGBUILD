@@ -90,7 +90,7 @@ prepare() {
     patch -Np1 < "../$src"
   done
 
-  audio_patch="v0.3.1"
+  audio_patch="v0.3.3"
   echo "Applying patch Legion Audio series ${audio_patch}..."
   local _patch
   for _patch in ../legion-pro7-gen10-audio/upstream/series/${audio_patch}/000[1-7]-*.patch; do
