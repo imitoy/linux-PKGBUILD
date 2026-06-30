@@ -45,7 +45,7 @@ options=(
 _srcname=linux-${pkgver%.*}
 _srctag=v${pkgver%.*}-${pkgver##*.}
 source=(
-  git+https://github.com/marco-giunta/legion-pro7-gen10-audio.git
+  git+https://github.com/imitoy/16iax10h-linux-sound-saga.git
   https://cdn.kernel.org/pub/linux/kernel/v${pkgver%%.*}.x/${_srcname}.tar.{xz,sign}
   $url/releases/download/$_srctag/linux-$_srctag.patch.zst{,.sig}
 )
@@ -93,12 +93,12 @@ prepare() {
   audio_patch="v0.3.3"
   echo "Applying patch Legion Audio series ${audio_patch}..."
   local _patch
-  for _patch in ../legion-pro7-gen10-audio/upstream/series/${audio_patch}/000[1-7]-*.patch; do
+  for _patch in ../16iax10h-linux-sound-saga/upstream/series/${audio_patch}/000[1-7]-*.patch; do
     echo "Applying $(basename $_patch)..."
     patch -Np1 < "$_patch"
   done
 
-  patch -Np1 < "../legion-pro7-gen10-audio/upstream/series/${audio_patch}/0008-ALSA-hda-realtek-enable-AW88399-on-Lenovo-Legion-Pro.patch" || true
+  patch -Np1 < <(sed -n '/^diff --git/,$p' "../16iax10h-linux-sound-saga/upstream/series/${audio_patch}/0008-ALSA-hda-realtek-enable-AW88399-on-Lenovo-Legion-Pro.patch")
 
   cp -f ../../alc269.c sound/hda/codecs/realtek/alc269.c
 
