@@ -90,17 +90,13 @@ prepare() {
     patch -Np1 < "../$src"
   done
 
-  audio_patch="v0.3.3"
+  audio_patch="v0.4"
   echo "Applying patch Legion Audio series ${audio_patch}..."
   local _patch
-  for _patch in ../16iax10h-linux-sound-saga/upstream/series/${audio_patch}/000[1-7]-*.patch; do
+  for _patch in ../16iax10h-linux-sound-saga/upstream/series/${audio_patch}/000[1-8]-*.patch; do
     echo "Applying $(basename $_patch)..."
     patch -Np1 < "$_patch"
   done
-
-  patch -Np1 < <(sed -n '/^diff --git/,$p' "../16iax10h-linux-sound-saga/upstream/series/${audio_patch}/0008-ALSA-hda-realtek-enable-AW88399-on-Lenovo-Legion-Pro.patch")
-
-  cp -f ../../alc269.c sound/hda/codecs/realtek/alc269.c
 
   cp ../config.$CARCH .config
   make olddefconfig
