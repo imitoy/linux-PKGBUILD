@@ -62,7 +62,7 @@ b2sums=('0d6e9ff535af085190da7df50887b20f395cd4d6befb7158c9993bf77fe92459a998287
         'SKIP')
 b2sums_x86_64=('dc8b97708ce42b9c32767b1b0344e1373640c898aa67e6b0123c0f85a3a7fafa798c7f9ffb744147488309b78229c14eaf0ac0456e1d74a6c80e513ceb26d127')
 
-sha256sums=('SKIP'
+sha256sums=(
             # https://www.kernel.org/pub/linux/kernel/v7.x/sha256sums.asc
             '37198c93727be247c9fb5309bb86cd5e496c61e5322cd8c4eca9476bb0b5883f'
             'SKIP'
