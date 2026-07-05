@@ -46,6 +46,7 @@ _srctag=v${pkgver%.*}-${pkgver##*.}
 source=(
   https://cdn.kernel.org/pub/linux/kernel/v${pkgver%%.*}.x/${_srcname}.tar.{xz,sign}
   $url/releases/download/$_srctag/linux-$_srctag.patch.zst{,.sig}
+  git+https://github.com/imitoy/16iax10h-linux-sound-saga.git
 )
 source_x86_64=(config.x86_64)
 validpgpkeys=(
@@ -56,6 +57,7 @@ validpgpkeys=(
 b2sums=('f313eb3360dc5cd0e611758b84f9d8d7a984f28b6f832d45823619f66679c56823a18a55eaf7b4704d903b031704cc624f1e055ce25752daa5bf77966839c2d2'
         'SKIP'
         '06512ff2e57bbb6a985101091ddcb197cc708205b6b89d7d28bd7f9cda39887a9289edc02bb9b391107596e5de0a782c953fdc9c332b4d47914741368241b7cd'
+        'SKIP'
         'SKIP')
 b2sums_x86_64=('e99adaae962b45b28c4cbb4aa05c3e3b8ae2bd314b8f0ea756261400fb2a464f6e1c9153476553b6f994c22260ec97b84e9962867ad2b82a2edbd4ae8a84edc7')
 
@@ -63,6 +65,7 @@ b2sums_x86_64=('e99adaae962b45b28c4cbb4aa05c3e3b8ae2bd314b8f0ea756261400fb2a464f
 sha256sums=('de9999b784d2293f00d39c62d8f92a08ab8a54bc4e80ffd250a0c09cb07a0f98'
             'SKIP'
             '240d48185678d3e7a6a701cd69c0034c6843fb7000d88823aa34f3e4e52497d7'
+            'SKIP'
             'SKIP')
 
 export KBUILD_BUILD_HOST=archlinux
@@ -84,6 +87,14 @@ prepare() {
     [[ $src = *.patch ]] || continue
     echo "Applying patch $src..."
     patch -Np1 < "../$src"
+  done
+
+  audio_patch="v0.4"
+  echo "Applying patch Legion Audio series ${audio_patch}..."
+  local _patch
+  for _patch in ../16iax10h-linux-sound-saga/upstream/series/${audio_patch}/000[1-8]-*.patch; do
+    echo "Applying $(basename $_patch)..."
+    patch -Np1 < "$_patch"
   done
 
   echo "Setting config..."
