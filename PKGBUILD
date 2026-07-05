@@ -1,7 +1,7 @@
 # Maintainer: Jan Alexander Steffens (heftig) <heftig@archlinux.org>
 
 pkgbase=linux
-pkgver=7.0.14.arch1
+pkgver=7.1.2.arch2
 pkgrel=1
 pkgdesc='Linux'
 url='https://github.com/archlinux/linux'
@@ -14,6 +14,7 @@ makedepends=(
   binutils
   cpio
   gettext
+  git
   glibc
   libelf
   libgcc
@@ -54,17 +55,18 @@ validpgpkeys=(
   647F28654894E3BD457199BE38DBBDC86092693E  # Greg Kroah-Hartman
   83BC8889351B5DEBBB68416EB8AC08600F108CDF  # Jan Alexander Steffens (heftig)
 )
-b2sums=('f313eb3360dc5cd0e611758b84f9d8d7a984f28b6f832d45823619f66679c56823a18a55eaf7b4704d903b031704cc624f1e055ce25752daa5bf77966839c2d2'
+b2sums=('0d6e9ff535af085190da7df50887b20f395cd4d6befb7158c9993bf77fe92459a9982877ce944ca522192daa5a54c952c3d368def04b579796ba7109a972453b'
         'SKIP'
-        '06512ff2e57bbb6a985101091ddcb197cc708205b6b89d7d28bd7f9cda39887a9289edc02bb9b391107596e5de0a782c953fdc9c332b4d47914741368241b7cd'
+        '574d2fd6a2921aa1396ab855b60398abf786971a1871254244dfbf22d1bb2a5969d4d39042efe14fb4b1479f7db36b1345f9b331d567f0ef963c28c8d5fcb78b'
         'SKIP'
         'SKIP')
-b2sums_x86_64=('e99adaae962b45b28c4cbb4aa05c3e3b8ae2bd314b8f0ea756261400fb2a464f6e1c9153476553b6f994c22260ec97b84e9962867ad2b82a2edbd4ae8a84edc7')
+b2sums_x86_64=('ce654c7256a5bbced1ac0e2ce0b204d7957c0631344eae4d911d501a39d45417a23d4adbef6265b617e870f8e349680fb34655c8cf28f91887fe8489a48fd4b8')
 
-# https://www.kernel.org/pub/linux/kernel/v7.x/sha256sums.asc
-sha256sums=('de9999b784d2293f00d39c62d8f92a08ab8a54bc4e80ffd250a0c09cb07a0f98'
+sha256sums=('SKIP'
+            # https://www.kernel.org/pub/linux/kernel/v7.x/sha256sums.asc
+            '37198c93727be247c9fb5309bb86cd5e496c61e5322cd8c4eca9476bb0b5883f'
             'SKIP'
-            '240d48185678d3e7a6a701cd69c0034c6843fb7000d88823aa34f3e4e52497d7'
+            '4e8f63e6242bbef51b85725d032669de3f6781d4ab217c997447c9b43f935b59'
             'SKIP'
             'SKIP')
 
@@ -97,10 +99,21 @@ prepare() {
     patch -Np1 < "$_patch"
   done
 
+<<<<<<< HEAD
   echo "Setting config..."
+=======
+>>>>>>> 29bc6ddca2cbb9cf26dbbaf885b812ad3674fc86
   cp ../config.$CARCH .config
   make olddefconfig
   diff -u ../config.$CARCH .config || :
+
+  echo "CONFIG_SND_HDA_SCODEC_AW88399=m
+CONFIG_SND_HDA_SCODEC_AW88399_I2C=m
+CONFIG_SND_SOC_AW88399=m
+CONFIG_SND_SOC_SOF_INTEL_TOPLEVEL=y
+CONFIG_SND_SOC_SOF_INTEL_COMMON=m
+CONFIG_SND_SOC_SOF_INTEL_MTL=m
+CONFIG_SND_SOC_SOF_INTEL_LNL=m" >> .config
 
   make -s kernelrelease > version
   echo "Prepared $pkgbase version $(<version)"
