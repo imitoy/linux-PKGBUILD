@@ -99,10 +99,7 @@ prepare() {
     patch -Np1 < "$_patch"
   done
 
-<<<<<<< HEAD
   echo "Setting config..."
-=======
->>>>>>> 29bc6ddca2cbb9cf26dbbaf885b812ad3674fc86
   cp ../config.$CARCH .config
   make olddefconfig
   diff -u ../config.$CARCH .config || :
