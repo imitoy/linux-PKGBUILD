@@ -94,7 +94,7 @@ prepare() {
   audio_patch="v0.4"
   echo "Applying patch Legion Audio series ${audio_patch}..."
   local _patch
-  for _patch in ../16iax10h-linux-sound-saga/upstream/series/${audio_patch}/000[1-8]-*.patch; do
+  for _patch in ../16iax10h-linux-sound-saga/upstream/series/${audio_patch}/000[1-9]-*.patch; do
     echo "Applying $(basename $_patch)..."
     patch -Np1 < "$_patch"
   done
