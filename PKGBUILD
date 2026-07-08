@@ -91,12 +91,9 @@ prepare() {
   done
 
   audio_patch="v0.4"
+  kernel_version="7.1.3"
   echo "Applying patch Legion Audio series ${audio_patch}..."
-  local _patch
-  for _patch in ../16iax10h-linux-sound-saga/upstream/series/${audio_patch}/000[1-9]-*.patch; do
-    echo "Applying $(basename $_patch)..."
-    patch -Np1 < "$_patch"
-  done
+  patch -Np1 < ../16iax10h-linux-sound-saga/upstream/combined/${audio_patch}/${audio_patch}_${kernel_version}.patch
 
   echo "Setting config..."
   cp ../config.$CARCH .config
