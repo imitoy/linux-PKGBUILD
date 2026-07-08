@@ -1,5 +1,10 @@
 # Maintainer: Jan Alexander Steffens (heftig) <heftig@archlinux.org>
 
+# Legion Audio Fix
+audio_patch="v0.4.2"
+kernel_version="7.1.3"
+
+
 pkgbase=linux
 pkgver=7.1.3.arch1
 pkgrel=1
@@ -90,8 +95,6 @@ prepare() {
     patch -Np1 < "../$src"
   done
 
-  audio_patch="v0.4.2"
-  kernel_version="7.1.3"
   echo "Applying patch Legion Audio series ${audio_patch}..."
   patch -Np1 < ../16iax10h-linux-sound-saga/upstream/combined/${audio_patch}/${audio_patch}_${kernel_version}.patch
 
