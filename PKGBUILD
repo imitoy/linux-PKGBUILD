@@ -2,8 +2,6 @@
 
 # Legion Audio Fix
 audio_patch="v0.4.2"
-kernel_version="7.1.3"
-
 
 pkgbase=linux
 pkgver=7.1.3.arch1
@@ -52,7 +50,7 @@ _srctag=v${pkgver%.*}-${pkgver##*.}
 source=(
   https://cdn.kernel.org/pub/linux/kernel/v${pkgver%%.*}.x/${_srcname}.tar.{xz,sign}
   $url/releases/download/$_srctag/linux-$_srctag.patch.zst{,.sig}
-  git+https://github.com/imitoy/16iax10h-linux-sound-saga.git
+  https://raw.githubusercontent.com/marco-giunta/legion-pro7-gen10-audio/legion_audio/upstream/combined/${audio_patch}/${audio_patch}_${pkgver%.*}.patch 
 )
 source_x86_64=(config.x86_64)
 validpgpkeys=(
@@ -95,21 +93,19 @@ prepare() {
     patch -Np1 < "../$src"
   done
 
-  echo "Applying patch Legion Audio series ${audio_patch}..."
-  patch -Np1 < ../16iax10h-linux-sound-saga/upstream/combined/${audio_patch}/${audio_patch}_${kernel_version}.patch
-
   echo "Setting config..."
   cp ../config.$CARCH .config
   make olddefconfig
   diff -u ../config.$CARCH .config || :
 
-  echo "CONFIG_SND_HDA_SCODEC_AW88399=m
-CONFIG_SND_HDA_SCODEC_AW88399_I2C=m
-CONFIG_SND_SOC_AW88399=m
-CONFIG_SND_SOC_SOF_INTEL_TOPLEVEL=y
-CONFIG_SND_SOC_SOF_INTEL_COMMON=m
-CONFIG_SND_SOC_SOF_INTEL_MTL=m
-CONFIG_SND_SOC_SOF_INTEL_LNL=m" >> .config
+  echo "Injecting sound driver configuration options..."
+  ./scripts/config --module CONFIG_SND_HDA_SCODEC_AW88399
+  ./scripts/config --module CONFIG_SND_HDA_SCODEC_AW88399_I2C
+  ./scripts/config --module CONFIG_SND_SOC_AW88399
+  ./scripts/config --enable CONFIG_SND_SOC_SOF_INTEL_TOPLEVEL
+  ./scripts/config --module CONFIG_SND_SOC_SOF_INTEL_COMMON
+  ./scripts/config --module CONFIG_SND_SOC_SOF_INTEL_MTL
+  ./scripts/config --module CONFIG_SND_SOC_SOF_INTEL_LNL
 
   make -s kernelrelease > version
   echo "Prepared $pkgbase version $(<version)"
