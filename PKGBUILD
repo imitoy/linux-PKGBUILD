@@ -1,7 +1,7 @@
 # Maintainer: Jan Alexander Steffens (heftig) <heftig@archlinux.org>
 
 # Legion Audio Fix
-audio_patch="v0.5.1"
+audio_patch="v1"
 
 pkgbase=linux
 pkgver=7.1.3.arch2
