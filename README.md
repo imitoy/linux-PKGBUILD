@@ -8,7 +8,7 @@
    
 2. Build & Install
    ```bash
-   makepkg -si
+   makepkg -si --skippgpcheck
    ```
 
-   Add `--skippgpcheck` if you can't pass checking.
+   The `--skippgpcheck` parameter is needed since we are building a custom kernel.
