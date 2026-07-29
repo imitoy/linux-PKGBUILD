@@ -2,7 +2,7 @@
 
 # Legion Audio Fix
 audio_patch=1
-audio_patch_kernel_version=7.1.3
+audio_patch_kernel_version=7.1.5
 
 pkgbase=linux
 pkgver=7.1.5.arch1
