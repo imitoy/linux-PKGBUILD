@@ -6,7 +6,7 @@ audio_patch_kernel_version=7.1.3
 
 pkgbase=linux
 pkgver=7.1.5.arch1
-pkgrel=1
+pkgrel=2
 pkgdesc='Linux'
 url='https://github.com/archlinux/linux'
 arch=(
