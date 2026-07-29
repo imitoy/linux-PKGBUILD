@@ -5,10 +5,15 @@
    git clone https://github.com/imitoy/linux-PKGBUILD
    cd linux-PKGBUILD
    ```
-   
-2. Build & Install
+
+2. Set parallel job count (Optional)
    ```bash
-   makepkg -si
+   export MAKEFLAGS=-j$(nproc)
+   ```
+   
+3. Build & Install
+   ```bash
+   makepkg -si --skippgpcheck
    ```
 
-   Add `--skippgpcheck` if you can't pass checking.
+   The `--skippgpcheck` parameter is needed since we are building a custom kernel.
