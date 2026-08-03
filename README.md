@@ -1,6 +1,6 @@
 # Instructions
 
-1. Clone this respository
+1. Clone this repository
    ```bash
    git clone https://github.com/imitoy/linux-PKGBUILD
    cd linux-PKGBUILD
