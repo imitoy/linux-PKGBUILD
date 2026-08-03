@@ -1,8 +1,12 @@
+# Introduction
+
+This repository is created to fix Linux Audio on the Lenovo Legion Pro 7i Gen 10 (16IAX10H) and similar devices with kernel-level patches.
+
 # Instructions
 
 1. Clone this repository
    ```bash
-   git clone https://github.com/imitoy/linux-PKGBUILD
+   git clone https://github.com/imitoy/linux-PKGBUILD.git
    cd linux-PKGBUILD
    ```
 
@@ -17,3 +21,5 @@
    ```
 
    The `--skippgpcheck` parameter is needed since we are building a custom kernel.
+
+4. To fix your audio, you need to install [the aw88399 firmware](https://github.com/imitoy/aw88399_acf-PKGBUILD).
