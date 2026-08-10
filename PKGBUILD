@@ -1,8 +1,6 @@
 # Maintainer: Jan Alexander Steffens (heftig) <heftig@archlinux.org>
 
 # Legion Audio Fix
-audio_patch=1.1
-audio_patch_kernel_version=7.1.5
 
 pkgbase=linux
 pkgver=7.1.7.arch1
@@ -51,7 +49,7 @@ _srctag=v${pkgver%.*}-${pkgver##*.}
 source=(
   https://cdn.kernel.org/pub/linux/kernel/v${pkgver%%.*}.x/${_srcname}.tar.{xz,sign}
   $url/releases/download/$_srctag/linux-$_srctag.patch.zst{,.sig}
-  https://raw.githubusercontent.com/marco-giunta/legion-pro7-gen10-audio/legion_audio/upstream/combined/v${audio_patch}/v${audio_patch}_${audio_patch_kernel_version}.patch
+  https://raw.githubusercontent.com/marco-giunta/legion-pro7-gen10-audio/refs/heads/legion_audio/patches/audio/legion_pro7_${pkgver%.*}.patch
 )
 source_x86_64=(config.x86_64)
 validpgpkeys=(
