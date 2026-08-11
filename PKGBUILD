@@ -1,7 +1,9 @@
 # Maintainer: Jan Alexander Steffens (heftig) <heftig@archlinux.org>
 
+# Legion Audio Fix
+
 pkgbase=linux
-pkgver=7.1.2.arch2
+pkgver=7.1.7.arch1
 pkgrel=1
 pkgdesc='Linux'
 url='https://github.com/archlinux/linux'
@@ -45,9 +47,9 @@ options=(
 _srcname=linux-${pkgver%.*}
 _srctag=v${pkgver%.*}-${pkgver##*.}
 source=(
-  git+https://github.com/imitoy/16iax10h-linux-sound-saga.git
   https://cdn.kernel.org/pub/linux/kernel/v${pkgver%%.*}.x/${_srcname}.tar.{xz,sign}
   $url/releases/download/$_srctag/linux-$_srctag.patch.zst{,.sig}
+  https://raw.githubusercontent.com/marco-giunta/legion-pro7-gen10-audio/refs/heads/legion_audio/patches/audio/legion_pro7_${pkgver%.*}.patch
 )
 source_x86_64=(config.x86_64)
 validpgpkeys=(
@@ -55,18 +57,18 @@ validpgpkeys=(
   647F28654894E3BD457199BE38DBBDC86092693E  # Greg Kroah-Hartman
   83BC8889351B5DEBBB68416EB8AC08600F108CDF  # Jan Alexander Steffens (heftig)
 )
-b2sums=('SKIP'
-        '0d6e9ff535af085190da7df50887b20f395cd4d6befb7158c9993bf77fe92459a9982877ce944ca522192daa5a54c952c3d368def04b579796ba7109a972453b'
+b2sums=('1a1884d4ac6e5b2a49b5f4835635c47b33552568a01b2cd65186a252da00e0578af2830c60a88208ec0834f718779815663dd7be148903b58f72e22ac8673e94'
         'SKIP'
-        '574d2fd6a2921aa1396ab855b60398abf786971a1871254244dfbf22d1bb2a5969d4d39042efe14fb4b1479f7db36b1345f9b331d567f0ef963c28c8d5fcb78b'
+        'f3c197f565e52a2b692798c0afcc2e783e504fe8fe34303c39ed50c374b81d98f8d4b38ef8e99cc37cd7ad9e7fa4d122a961b16b8cc20f80f8af6f59b3123aea'
+        'SKIP'
         'SKIP')
-b2sums_x86_64=('ce654c7256a5bbced1ac0e2ce0b204d7957c0631344eae4d911d501a39d45417a23d4adbef6265b617e870f8e349680fb34655c8cf28f91887fe8489a48fd4b8')
+b2sums_x86_64=('f40d27145e8c0961080cf0d9c219db937352e58cf06f844443a8951cd16d33c5f17f708b188454118fb5dc1a97492c39d6645d4f3a98dc0680fd5c949e17a3d3')
 
-sha256sums=('SKIP'
-            # https://www.kernel.org/pub/linux/kernel/v7.x/sha256sums.asc
-            '37198c93727be247c9fb5309bb86cd5e496c61e5322cd8c4eca9476bb0b5883f'
+# https://www.kernel.org/pub/linux/kernel/v7.x/sha256sums.asc
+sha256sums=('ca8f2a6884a4d62043e9ab93ac1ab15efc2b6630fe8f768b2ef2ffdf4b5e26df'
             'SKIP'
-            '4e8f63e6242bbef51b85725d032669de3f6781d4ab217c997447c9b43f935b59'
+            '927ad110156cb3491defb466954b2ea543cdd7fb8b2d34681b8089b7fa38584b'
+            'SKIP'
             'SKIP')
 
 export KBUILD_BUILD_HOST=archlinux
@@ -90,29 +92,19 @@ prepare() {
     patch -Np1 < "../$src"
   done
 
-  audio_patch="v0.3.3"
-  echo "Applying patch Legion Audio series ${audio_patch}..."
-  local _patch
-  for _patch in ../16iax10h-linux-sound-saga/upstream/series/${audio_patch}/000[1-7]-*.patch; do
-    echo "Applying $(basename $_patch)..."
-    patch -Np1 < "$_patch"
-  done
-
-  patch -Np1 < <(sed -n '/^diff --git/,$p' "../16iax10h-linux-sound-saga/upstream/series/${audio_patch}/0008-ALSA-hda-realtek-enable-AW88399-on-Lenovo-Legion-Pro.patch")
-
-  cp -f ../../alc269.c sound/hda/codecs/realtek/alc269.c
-
+  echo "Setting config..."
   cp ../config.$CARCH .config
   make olddefconfig
   diff -u ../config.$CARCH .config || :
 
-  echo "CONFIG_SND_HDA_SCODEC_AW88399=m
-CONFIG_SND_HDA_SCODEC_AW88399_I2C=m
-CONFIG_SND_SOC_AW88399=m
-CONFIG_SND_SOC_SOF_INTEL_TOPLEVEL=y
-CONFIG_SND_SOC_SOF_INTEL_COMMON=m
-CONFIG_SND_SOC_SOF_INTEL_MTL=m
-CONFIG_SND_SOC_SOF_INTEL_LNL=m" >> .config
+  echo "Injecting sound driver configuration options..."
+  ./scripts/config --module CONFIG_SND_HDA_SCODEC_AW88399
+  ./scripts/config --module CONFIG_SND_HDA_SCODEC_AW88399_I2C
+  ./scripts/config --module CONFIG_SND_SOC_AW88399
+  ./scripts/config --enable CONFIG_SND_SOC_SOF_INTEL_TOPLEVEL
+  ./scripts/config --module CONFIG_SND_SOC_SOF_INTEL_COMMON
+  ./scripts/config --module CONFIG_SND_SOC_SOF_INTEL_MTL
+  ./scripts/config --module CONFIG_SND_SOC_SOF_INTEL_LNL
 
   make -s kernelrelease > version
   echo "Prepared $pkgbase version $(<version)"
@@ -120,9 +112,13 @@ CONFIG_SND_SOC_SOF_INTEL_LNL=m" >> .config
 
 build() {
   cd $_srcname
+
+  make htmldocs SPHINXOPTS=-QT &
+  local pid_docs=$!
+
   make all
   make -C tools/bpf/bpftool vmlinux.h feature-clang-bpf-co-re=1
-  make htmldocs SPHINXOPTS=-QT
+  wait $pid_docs
 }
 
 _package() {
@@ -230,8 +226,8 @@ _package-headers() {
   echo "Installing KConfig files..."
   find . -name 'Kconfig*' -exec install -Dm644 {} "$builddir/{}" \;
 
-  echo "Installing Rust files..."
   if [[ $(scripts/config -s CONFIG_RUST) = y ]]; then
+    echo "Installing Rust files..."
     install -Dt "$builddir/rust" -m644 rust/*.rmeta
     install -Dt "$builddir/rust" rust/*.so
   fi
@@ -292,7 +288,10 @@ _package-docs() {
     dst="${src#Documentation/}"
     dst="$builddir/Documentation/${dst#output/}"
     install -Dm644 "$src" "$dst"
-  done < <(find Documentation -name '.*' -prune -o ! -type d -print0)
+  done < <(
+    find Documentation \( -name '.*' -o -name __pycache__ \) -prune \
+      -o \! -type d -print0
+  )
 
   echo "Adding symlink..."
   mkdir -p "$pkgdir/usr/share/doc"
