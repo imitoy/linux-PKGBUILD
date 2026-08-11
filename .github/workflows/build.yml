@@ -23,7 +23,7 @@ jobs:
       - name: Initialize System & Dependencies
         run: |
           pacman -Syu --noconfirm base-devel git
-          # 安装 gh CLI:用于创建/管理 GitHub Pages 上的 pacman 仓库
+          # 安装 gh CLI:用于触发 GitHub Pages 部署仓库更新
           pacman -S --noconfirm github-cli
           useradd builder -m
           passwd -d builder
@@ -46,100 +46,39 @@ jobs:
           source ./PKGBUILD
           echo "VERSION=${pkgver}-${pkgrel}" >> $GITHUB_OUTPUT
 
-      - name: Sync packages to GitHub Pages pacman repo
-        id: sync_pages
-        env:
-          GH_TOKEN: ${{ secrets.PACMAN_REPO_TOKEN }}
-        run: |
-          set -euo pipefail
-
-          # ===== 配置 =====
-          # GitHub Pages 上的 pacman 仓库(不存在则自动创建同名仓库)
-          PAGES_REPO="linux-legion-audio-fix"
-          PAGES_BRANCH="gh-pages"
-          # 拆开拼接,避免被 secret 扫描误判
-          GH_HOST="github.com"
-          AUTH_URL="https://x-access-token:${GH_TOKEN}@${GH_HOST}/imitoy/${PAGES_REPO}.git"
-
-          echo "==> 检查 GitHub Pages pacman 仓库是否存在: ${PAGES_REPO}"
-          if gh repo view "imitoy/${PAGES_REPO}" >/dev/null 2>&1; then
-            echo "==> 仓库已存在,拉取 GitHub Pages 上的 pacman 仓库文件"
-            # gh-pages 分支可能尚未创建(仓库存在但未启用 Pages)
-            if ! git ls-remote --heads "${AUTH_URL}" "${PAGES_BRANCH}" | grep -q "${PAGES_BRANCH}"; then
-              echo "==> gh-pages 分支不存在,创建并启用 GitHub Pages"
-              git clone "${AUTH_URL}" pages-repo
-              cd pages-repo
-              git checkout -b "${PAGES_BRANCH}"
-              git config user.name "github-actions[bot]"
-              git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-              git commit --allow-empty -m "init ${PAGES_BRANCH} branch"
-              git push -u origin "${PAGES_BRANCH}"
-              cd ..
-              rm -rf pages-repo
-              gh api "repos/imitoy/${PAGES_REPO}/pages" -X POST \
-                -f "source[branch]=${PAGES_BRANCH}" -f "source[path]=/" || true
-            fi
-            git clone --branch "${PAGES_BRANCH}" --single-branch "${AUTH_URL}" pages-repo
-          else
-            echo "==> 仓库不存在,创建同名 pacman 仓库: ${PAGES_REPO}"
-            gh repo create "imitoy/${PAGES_REPO}" --public --confirm
-            git clone "${AUTH_URL}" pages-repo
-            cd pages-repo
-            git checkout -b "${PAGES_BRANCH}"
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git commit --allow-empty -m "init ${PAGES_REPO} pacman repo"
-            git push -u origin "${PAGES_BRANCH}"
-            cd ..
-            # 启用 GitHub Pages(从 gh-pages 分支发布)
-            gh api "repos/imitoy/${PAGES_REPO}/pages" -X POST \
-              -f "source[branch]=${PAGES_BRANCH}" -f "source[path]=/" || true
-            git clone --branch "${PAGES_BRANCH}" --single-branch "${AUTH_URL}" pages-repo
-          fi
-
-          cd pages-repo
-
-          echo "==> 将新构建的软件包加入 pacman 仓库"
-          # 复制新包到仓库目录
-          cp ../*.pkg.tar.zst .
-
-          # 更新 pacman 数据库(保留已有软件包,替换同名包)
-          if ls *.db.tar.gz >/dev/null 2>&1; then
-            repo-add -R "${PAGES_REPO}.db.tar.gz" *.pkg.tar.zst
-          else
-            repo-add "${PAGES_REPO}.db.tar.gz" *.pkg.tar.zst
-          fi
-
-          # repo-add 生成 .db/.files 符号链接,一并提交
-          ln -sf "${PAGES_REPO}.db.tar.gz" "${PAGES_REPO}.db"
-          ln -sf "${PAGES_REPO}.files.tar.gz" "${PAGES_REPO}.files"
-
-          echo "==> 提交并推送到 GitHub Pages"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          if git diff --cached --quiet; then
-            echo "无变更,跳过提交"
-          else
-            git commit -m "update pacman repo: $(ls *.pkg.tar.zst | tr '\n' ' ')"
-            # 两个 PKGBUILD 仓库可能同时推送,先 rebase 再 push
-            git pull --rebase origin "${PAGES_BRANCH}" || true
-            git push origin "${PAGES_BRANCH}"
-          fi
-
-          # 复制数据库文件回工作区,供 Release 上传
-          cp "${PAGES_REPO}.db.tar.gz" ../ 2>/dev/null || true
-          echo "==> pacman 仓库已更新: https://imitoy.github.io/${PAGES_REPO}/"
-          cd ..
-          rm -rf pages-repo
-
       - name: Upload to Release
         uses: softprops/action-gh-release@v2
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         with:
           tag_name: v${{ steps.get_version.outputs.VERSION }}
           files: |
             *.pkg.tar.zst
-            linux-legion-audio-fix.db.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Trigger GitHub Pages pacman repo update
+        env:
+          GH_TOKEN: ${{ secrets.PACMAN_REPO_TOKEN }}
+        run: |
+          set -euo pipefail
+          # 部署仓库:GitHub Pages 上的 pacman 仓库(不存在则自动创建同名仓库)
+          PAGES_REPO="linux-legion-audio-fix"
+          if ! gh repo view "imitoy/${PAGES_REPO}" >/dev/null 2>&1; then
+            echo "==> 部署仓库不存在,创建 ${PAGES_REPO} 并初始化部署 workflow"
+            gh repo create "imitoy/${PAGES_REPO}" --public --confirm
+            # 将部署 workflow 推送到新仓库(从本仓库的模板复制)
+            git clone "https://github.com/imitoy/${PAGES_REPO}.git" pages-repo
+            cd pages-repo
+            mkdir -p .github/workflows
+            cp "${GITHUB_WORKSPACE}/.github/pages-deploy.yml" .github/workflows/deploy.yml
+            git add -A
+            git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+              commit -m "ci: init pacman repo deploy workflow" || true
+            git push origin main || true
+            cd .. && rm -rf pages-repo
+            # 启用 GitHub Pages(Actions 部署模式)
+            gh api "repos/imitoy/${PAGES_REPO}/pages" -X PUT -f "build_type=workflow" || true
+          fi
+          echo "==> 触发 ${PAGES_REPO} 部署(拉取最新 Release 资产并发布到 Pages)"
+          gh api "repos/imitoy/${PAGES_REPO}/dispatches" -X POST \
+            -f "event_type=update-packages" || true
+          echo "==> 已触发: https://github.com/imitoy/${PAGES_REPO}/actions"
