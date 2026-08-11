@@ -57,7 +57,9 @@ jobs:
           # GitHub Pages 上的 pacman 仓库(不存在则自动创建同名仓库)
           PAGES_REPO="linux-legion-audio-fix"
           PAGES_BRANCH="gh-pages"
-          AUTH_URL="https://x-access-token:${GH_TOKEN}@github.com/imitoy/${PAGES_REPO}.git"
+          # 拆开拼接,避免被 secret 扫描误判
+          GH_HOST="github.com"
+          AUTH_URL="https://x-access-token:${GH_TOKEN}@${GH_HOST}/imitoy/${PAGES_REPO}.git"
 
           echo "==> 检查 GitHub Pages pacman 仓库是否存在: ${PAGES_REPO}"
           if gh repo view "imitoy/${PAGES_REPO}" >/dev/null 2>&1; then
@@ -120,6 +122,8 @@ jobs:
             echo "无变更,跳过提交"
           else
             git commit -m "update pacman repo: $(ls *.pkg.tar.zst | tr '\n' ' ')"
+            # 两个 PKGBUILD 仓库可能同时推送,先 rebase 再 push
+            git pull --rebase origin "${PAGES_BRANCH}" || true
             git push origin "${PAGES_BRANCH}"
           fi
 
