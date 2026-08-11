@@ -12,6 +12,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      pages: write
+      id-token: write
     container:
       image: archlinux:latest
       options: --privileged
@@ -48,7 +50,10 @@ jobs:
 
       - name: Generate Repo Database
         run: |
-          repo-add custom_repo.db.tar.gz *.pkg.tar.zst
+          mkdir -p public/x86_64
+          cp *.pkg.tar.zst public/x86_64
+          cd public/x86_64
+          repo-add linux-legion-audio-fix.db.tar.gz *.pkg.tar.zst
 
       - name: Upload to Release
         uses: softprops/action-gh-release@v2
@@ -57,8 +62,10 @@ jobs:
           tag_name: v${{ steps.get_version.outputs.VERSION }}
           files: |
             *.pkg.tar.zst
-            custom_repo.db.tar.gz
-            custom_repo.db
-            custom_repo.files
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Pages Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './public'
