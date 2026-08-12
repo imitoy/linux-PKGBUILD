@@ -62,11 +62,11 @@ jobs:
           set -euo pipefail
           # 部署仓库:GitHub Pages 上的 pacman 仓库(不存在则自动创建同名仓库)
           PAGES_REPO="linux-legion-audio-fix"
-          if ! gh repo view "imitoy/${PAGES_REPO}" >/dev/null 2>&1; then
+          if ! gh repo view "hermes-bot-imitoy/${PAGES_REPO}" >/dev/null 2>&1; then
             echo "==> 部署仓库不存在,创建 ${PAGES_REPO} 并初始化部署 workflow"
-            gh repo create "imitoy/${PAGES_REPO}" --public --confirm
+            gh repo create "hermes-bot-imitoy/${PAGES_REPO}" --public --confirm
             # 将部署 workflow 推送到新仓库(从本仓库的模板复制)
-            git clone "https://github.com/imitoy/${PAGES_REPO}.git" pages-repo
+            git clone "https://github.com/hermes-bot-imitoy/${PAGES_REPO}.git" pages-repo
             cd pages-repo
             mkdir -p .github/workflows
             cp "${GITHUB_WORKSPACE}/.github/pages-deploy.yml" .github/workflows/deploy.yml
@@ -76,9 +76,9 @@ jobs:
             git push origin main || true
             cd .. && rm -rf pages-repo
             # 启用 GitHub Pages(Actions 部署模式)
-            gh api "repos/imitoy/${PAGES_REPO}/pages" -X PUT -f "build_type=workflow" || true
+            gh api "repos/hermes-bot-imitoy/${PAGES_REPO}/pages" -X PUT -f "build_type=workflow" || true
           fi
           echo "==> 触发 ${PAGES_REPO} 部署(拉取最新 Release 资产并发布到 Pages)"
-          gh api "repos/imitoy/${PAGES_REPO}/dispatches" -X POST \
+          gh api "repos/hermes-bot-imitoy/${PAGES_REPO}/dispatches" -X POST \
             -f "event_type=update-packages" || true
-          echo "==> 已触发: https://github.com/imitoy/${PAGES_REPO}/actions"
+          echo "==> 已触发: https://github.com/hermes-bot-imitoy/${PAGES_REPO}/actions"
