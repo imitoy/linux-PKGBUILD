@@ -75,7 +75,7 @@ jobs:
             cd .. && rm -rf pages-repo
             gh api "repos/${PAGES_REPO_OWNER}/${PAGES_REPO}/pages" -X PUT -f "build_type=workflow" || true
           fi
-          echo "==> 触发 ${PAGES_REPO} 部署(拉取最新 Release 资产并发布到 Pages)"
+          echo "==> Triggering deploying ${PAGES_REPO}"
           gh api "repos/${PAGES_REPO_OWNER}/${PAGES_REPO}/dispatches" -X POST \
             -f "event_type=update-packages" || true
-          echo "==> 已触发: https://github.com/${PAGES_REPO_OWNER}/${PAGES_REPO}/actions"
+          echo "==> Triggerred: https://github.com/${PAGES_REPO_OWNER}/${PAGES_REPO}/actions"
