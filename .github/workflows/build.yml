@@ -2,7 +2,7 @@ name: Build Arch Linux Package
 
 on:
   push:
-    branches: [ "main", "bot" ]
+    branches: [ "main" ]
     paths:
       - 'PKGBUILD'
   workflow_dispatch:
@@ -22,9 +22,7 @@ jobs:
 
       - name: Initialize System & Dependencies
         run: |
-          pacman -Syu --noconfirm base-devel git
-          # 安装 gh CLI:用于触发 GitHub Pages 部署仓库更新
-          pacman -S --noconfirm github-cli
+          pacman -Syu --noconfirm base-devel git github-cli
           useradd builder -m
           passwd -d builder
           printf 'builder ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/builder
@@ -58,17 +56,14 @@ jobs:
       - name: Trigger GitHub Pages pacman repo update
         env:
           GH_TOKEN: ${{ secrets.PACMAN_REPO_TOKEN }}
-          # 部署仓库 owner:默认 imitoy;fork 测试时通过仓库变量 PAGES_REPO_OWNER 覆盖
           PAGES_REPO_OWNER: ${{ vars.PAGES_REPO_OWNER }}
         run: |
           set -euo pipefail
           PAGES_REPO_OWNER="${PAGES_REPO_OWNER:-imitoy}"
-          # 部署仓库:GitHub Pages 上的 pacman 仓库(不存在则自动创建同名仓库)
           PAGES_REPO="linux-legion-audio-fix"
           if ! gh repo view "${PAGES_REPO_OWNER}/${PAGES_REPO}" >/dev/null 2>&1; then
-            echo "==> 部署仓库不存在,创建 ${PAGES_REPO} 并初始化部署 workflow"
+            echo "==> Creating ${PAGES_REPO}"
             gh repo create "${PAGES_REPO_OWNER}/${PAGES_REPO}" --public --confirm
-            # 将部署 workflow 推送到新仓库(从本仓库的模板复制)
             git clone "https://github.com/${PAGES_REPO_OWNER}/${PAGES_REPO}.git" pages-repo
             cd pages-repo
             mkdir -p .github/workflows
@@ -78,7 +73,6 @@ jobs:
               commit -m "ci: init pacman repo deploy workflow" || true
             git push origin main || true
             cd .. && rm -rf pages-repo
-            # 启用 GitHub Pages(Actions 部署模式)
             gh api "repos/${PAGES_REPO_OWNER}/${PAGES_REPO}/pages" -X PUT -f "build_type=workflow" || true
           fi
           echo "==> 触发 ${PAGES_REPO} 部署(拉取最新 Release 资产并发布到 Pages)"
