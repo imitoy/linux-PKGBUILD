@@ -2,7 +2,7 @@
 
 # Legion Audio Fix
 
-pkgbase=linux
+pkgbase=linux-legion-audio-fix
 pkgver=7.1.8.arch1
 pkgrel=3
 pkgdesc='Linux'

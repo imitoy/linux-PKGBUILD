@@ -12,8 +12,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      pages: write
-      id-token: write
     container:
       image: archlinux:latest
       options: --privileged
@@ -24,12 +22,10 @@ jobs:
 
       - name: Initialize System & Dependencies
         run: |
-          pacman -Syu --noconfirm base-devel git
-          
+          pacman -Syu --noconfirm base-devel git github-cli
           useradd builder -m
           passwd -d builder
           printf 'builder ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/builder
-          
           chown -R builder:builder .
 
       - name: Import GPG keys
@@ -48,16 +44,8 @@ jobs:
           source ./PKGBUILD
           echo "VERSION=${pkgver}-${pkgrel}" >> $GITHUB_OUTPUT
 
-      - name: Generate Repo Database
-        run: |
-          mkdir -p public/x86_64
-          cp *.pkg.tar.zst public/x86_64
-          cd public/x86_64
-          repo-add linux-legion-audio-fix.db.tar.gz *.pkg.tar.zst
-
       - name: Upload to Release
         uses: softprops/action-gh-release@v2
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         with:
           tag_name: v${{ steps.get_version.outputs.VERSION }}
           files: |
@@ -65,7 +53,29 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload Pages Artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: './public'
+      - name: Trigger GitHub Pages pacman repo update
+        env:
+          GH_TOKEN: ${{ secrets.PACMAN_REPO_TOKEN }}
+          PAGES_REPO_OWNER: ${{ vars.PAGES_REPO_OWNER }}
+        run: |
+          set -euo pipefail
+          PAGES_REPO_OWNER="${PAGES_REPO_OWNER:-imitoy}"
+          PAGES_REPO="linux-legion-audio-fix"
+          if ! gh repo view "${PAGES_REPO_OWNER}/${PAGES_REPO}" >/dev/null 2>&1; then
+            echo "==> Creating ${PAGES_REPO}"
+            gh repo create "${PAGES_REPO_OWNER}/${PAGES_REPO}" --public --confirm
+            git clone "https://github.com/${PAGES_REPO_OWNER}/${PAGES_REPO}.git" pages-repo
+            cd pages-repo
+            mkdir -p .github/workflows
+            cp "${GITHUB_WORKSPACE}/.github/pages-deploy.yml" .github/workflows/deploy.yml
+            git add -A
+            git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+              commit -m "ci: init pacman repo deploy workflow" || true
+            git push origin main || true
+            cd .. && rm -rf pages-repo
+            gh api "repos/${PAGES_REPO_OWNER}/${PAGES_REPO}/pages" -X PUT -f "build_type=workflow" || true
+          fi
+          echo "==> Triggering deploying ${PAGES_REPO}"
+          gh api "repos/${PAGES_REPO_OWNER}/${PAGES_REPO}/dispatches" -X POST \
+            -f "event_type=update-packages" || true
+          echo "==> Triggerred: https://github.com/${PAGES_REPO_OWNER}/${PAGES_REPO}/actions"

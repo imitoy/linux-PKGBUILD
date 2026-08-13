@@ -1,0 +1,63 @@
+name: Deploy pacman repo to GitHub Pages
+
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [update-packages]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install gh CLI
+        run: |
+          pacman -Syu --noconfirm
+          pacman -S --noconfirm github-cli
+
+      - name: Download packages from source repos
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SOURCE_REPO_OWNER: ${{ vars.SOURCE_REPO_OWNER }}
+        run: |
+          set -euo pipefail
+          SOURCE_REPO_OWNER="${SOURCE_REPO_OWNER:-imitoy}"
+          mkdir -p public
+          cd public
+          for repo in linux-PKGBUILD aw88399_acf-PKGBUILD; do
+            echo "==> Pulling the latest assets in ${SOURCE_REPO_OWNER}/${repo}"
+            gh release download --repo "${SOURCE_REPO_OWNER}/${repo}" --pattern '*.pkg.tar.zst' --dir . \
+              || echo "!! Skipped ${repo}"
+          done
+          ls -la
+
+      - name: Build pacman database
+        run: |
+          set -euo pipefail
+          cd public
+          if ls *.pkg.tar.zst >/dev/null 2>&1; then
+            repo-add linux-legion-audio-fix.db.tar.gz *.pkg.tar.zst
+            ln -sf linux-legion-audio-fix.db.tar.gz linux-legion-audio-fix.db
+            ln -sf linux-legion-audio-fix.files.tar.gz linux-legion-audio-fix.files
+          else
+            echo "!! No packages available"
+          fi
+
+      - name: Upload Pages Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './public'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
