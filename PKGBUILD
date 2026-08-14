@@ -127,6 +127,8 @@ _package() {
     coreutils
     initramfs
     kmod
+    "$pkgbase-headers"
+    "$pkgbase-docs"
   )
   optdepends=(
     "$pkgbase-headers: headers and scripts for building modules"
