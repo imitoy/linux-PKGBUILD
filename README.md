@@ -31,3 +31,4 @@ sudo grub-mkconfig -o /boot/grub/grub.cfg
 ```bash
 sudo reboot
 ```
+7. Choose linux-legion-audio-fix kernel in your grub menu.
