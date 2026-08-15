@@ -23,3 +23,11 @@ This repository is created to fix Linux Audio on the Lenovo Legion Pro 7i Gen 10
    The `--skippgpcheck` parameter is needed since we are building a custom kernel.
 
 4. To fix your audio, you need to install [the aw88399 firmware](https://github.com/imitoy/aw88399_acf-PKGBUILD).
+5. Update grub config
+```bash
+sudo grub-mkconfig -o /boot/grub/grub.cfg
+```
+6. Reboot
+```bash
+sudo reboot
+```
