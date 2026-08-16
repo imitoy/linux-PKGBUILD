@@ -4,6 +4,9 @@ This repository provides kernel-level patches to fix Linux audio on the Lenovo L
 
 For pre-built Arch packages, please refer to [imitoy/linux-legion-audio-fix](https://github.com/imitoy/linux-legion-audio-fix).
 
+# URL
+Patch: [nadimkobeissi/16iax10h-linux-sound-saga](https://github.com/nadimkobeissi/16iax10h-linux-sound-saga)
+
 # Instructions
 
 1. Clone this repository
