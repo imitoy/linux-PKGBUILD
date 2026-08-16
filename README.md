@@ -2,6 +2,8 @@
 
 This repository is created to fix Linux Audio on the Lenovo Legion Pro 7i Gen 10 (16IAX10H) and similar devices with kernel-level patches.
 
+For pre-built Arch packages, please refer to [imitoy/linux-legion-audio-fix](https://github.com/imitoy/linux-legion-audio-fix).
+
 # Instructions
 
 1. Clone this repository
