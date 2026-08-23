@@ -1,26 +1,27 @@
 #!/usr/bin/env python3
 """
-自动解决 linux-PKGBUILD 与 Arch 官方 upstream 合并时的固定冲突。
+Auto-resolve the recurring merge conflicts between linux-PKGBUILD and the
+official Arch Linux upstream kernel PKGBUILD.
 
-冲突模式(每次 upstream 更新都会出现,共 3 处,全部在 PKGBUILD):
+Conflict patterns (reappear on every upstream update, 3 hunks, all in PKGBUILD):
 
-1. 头部版本区(pkgbase/pkgver/pkgrel)
-   - 本地(ours): 保留 pkgbase=linux-legion-audio-fix + 注释
-   - upstream:    更新 pkgver/pkgrel(必须采用)
-   → 解决: 保留 ours 的 pkgbase 与注释,采用 theirs 的 pkgver/pkgrel
+1. Header version block (pkgbase/pkgver/pkgrel)
+   - ours:   keeps pkgbase=linux-legion-audio-fix + comment
+   - theirs: new pkgver/pkgrel (must adopt)
+   -> resolution: keep our pkgbase + comment, adopt their pkgver/pkgrel
 
-2. b2sums 数组(第 3 个元素)
-   - 本地: 旧的 arch patch b2sum + 额外的 'SKIP'(legion patch 的占位)
-   - upstream: 新的 arch patch b2sum
-   → 解决: 采用 theirs 的 b2sum 值,保留 ours 的 'SKIP' 行
+2. b2sums array (3rd element)
+   - ours:   old arch-patch b2sum + extra 'SKIP' (legion patch placeholder)
+   - theirs: new arch-patch b2sum
+   -> resolution: adopt their b2sum value, keep our 'SKIP' line
 
-3. sha256sums 数组(第 3 个元素)
-   - 同上模式
-   → 解决: 同上
+3. sha256sums array (3rd element)
+   - same pattern as #2
+   -> resolution: same as above
 
-用法:
-    python3 resolve-upstream-conflicts.py [PKGBUILD 路径, 默认 ./PKGBUILD]
-退出码: 0 = 全部冲突已解决; 1 = 存在无法识别的冲突(需人工介入)
+Usage:
+    python3 resolve-upstream-conflicts.py [PKGBUILD path, default ./PKGBUILD]
+Exit code: 0 = all conflicts resolved; 1 = unrecognized conflicts remain (manual intervention required)
 """
 
 import re
@@ -30,8 +31,8 @@ def resolve_pkgbuild(path: str) -> bool:
     with open(path, encoding="utf-8") as f:
         content = f.read()
 
-    # 分割冲突块: <<<<<<< HEAD ... ======= ... >>>>>>> <sha>
-    # 用正则匹配完整的冲突块
+    # Split conflict hunks: <<<<<<< HEAD ... ======= ... >>>>>>> <sha>
+    # Match a full conflict hunk with a regex
     conflict_pattern = re.compile(
         r"<<<<<<< HEAD\n(?P<ours>.*?)\n=======\n(?P<theirs>.*?)\n>>>>>>> [^\n]+",
         re.DOTALL,
@@ -43,19 +44,20 @@ def resolve_pkgbuild(path: str) -> bool:
         ours = m.group("ours")
         theirs = m.group("theirs")
 
-        # ---- 冲突块 1: 头部版本区 ----
-        # ours 含 pkgbase=linux-legion-audio-fix(或有 # Legion 注释), theirs 含 pkgbase=linux
+        # ---- Conflict hunk 1: header version block ----
+        # ours contains pkgbase=linux-legion-audio-fix (or a # Legion comment),
+        # theirs contains pkgbase=linux
         if re.search(r"pkgbase\s*=\s*linux-legion-audio-fix", ours) and re.search(
             r"pkgbase\s*=\s*linux\b", theirs
         ):
-            # 保留 ours 中所有非 pkgver/pkgrel 的行(pkgbase 注释等)
+            # Keep all our non-pkgver/pkgrel lines (pkgbase, comments, etc.)
             ours_keep = [
                 line
                 for line in ours.splitlines()
                 if not re.match(r"^\s*pkgver\s*=", line)
                 and not re.match(r"^\s*pkgrel\s*=", line)
             ]
-            # 从 theirs 取 pkgver/pkgrel 行
+            # Take pkgver/pkgrel lines from theirs
             theirs_ver = [
                 line
                 for line in theirs.splitlines()
@@ -64,19 +66,20 @@ def resolve_pkgbuild(path: str) -> bool:
             ]
             return "\n".join(ours_keep + theirs_ver)
 
-        # ---- 冲突块 2/3: b2sums / sha256sums 数组 ----
-        # ours 比 theirs 多一个 'SKIP' 行(legion patch 占位), theirs 是新的哈希值
-        # 模式: ours 行数 = theirs 行数 + 1, 且 ours 中恰好有一个 'SKIP' 行
+        # ---- Conflict hunk 2/3: b2sums / sha256sums arrays ----
+        # ours has one extra 'SKIP' line (legion patch placeholder), theirs has
+        # the new hash value. Pattern: len(ours) == len(theirs) + 1 and ours
+        # contains exactly one 'SKIP' line.
         ours_lines = ours.splitlines()
         theirs_lines = theirs.splitlines()
         ours_skip = [l for l in ours_lines if "'SKIP'" in l]
         if len(ours_lines) == len(theirs_lines) + 1 and len(ours_skip) == 1:
-            # 保留 theirs 全部行(新哈希), 并在末尾补回 ours 多余的 SKIP
+            # Keep all their lines (new hashes), append our extra SKIP at the end
             return "\n".join(theirs_lines + ours_skip)
 
-        # ---- 无法识别的冲突 ----
+        # ---- Unrecognized conflict ----
         unresolved.append((ours[:80], theirs[:80]))
-        return m.group(0)  # 原样保留冲突标记, 供人工处理
+        return m.group(0)  # leave conflict markers intact for manual handling
 
     new_content, n = conflict_pattern.subn(resolve, content)
 
@@ -84,13 +87,17 @@ def resolve_pkgbuild(path: str) -> bool:
         f.write(new_content)
 
     if unresolved:
-        print(f"[!] 有 {len(unresolved)} 个冲突块无法自动解决, 已保留冲突标记:", file=sys.stderr)
+        print(
+            f"[!] {len(unresolved)} conflict hunk(s) could not be auto-resolved; "
+            f"conflict markers left in place:",
+            file=sys.stderr,
+        )
         for ours_head, theirs_head in unresolved:
             print(f"    ours: {ours_head!r}", file=sys.stderr)
             print(f"    theirs: {theirs_head!r}", file=sys.stderr)
         return False
 
-    print(f"[+] 已自动解决 {n} 个冲突块: {path}")
+    print(f"[+] Auto-resolved {n} conflict hunk(s): {path}")
     return True
 
 

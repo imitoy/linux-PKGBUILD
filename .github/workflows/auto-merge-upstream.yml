@@ -2,7 +2,7 @@ name: Auto-merge upstream kernel
 
 on:
   schedule:
-    # 每天 02:00 UTC 检查 upstream 是否有新版本(内核更新通常 UTC 上午发布)
+    # Check daily at 02:00 UTC for a new upstream release (kernel updates usually land in the morning UTC)
     - cron: '0 2 * * *'
   workflow_dispatch:
 
@@ -32,26 +32,27 @@ jobs:
       - name: Check for upstream changes
         id: check
         run: |
-          # 当前 main 与 upstream 的关系: 若 upstream 有本地没有的提交, 需要合并
+          # Relationship between current main and upstream: if upstream has commits we lack, a merge is needed
           AHEAD=$(git rev-list --count HEAD..upstream/main)
-          echo "upstream 领先 main: $AHEAD 个提交"
+          echo "upstream is $AHEAD commits ahead of main"
           echo "ahead=$AHEAD" >> "$GITHUB_OUTPUT"
 
       - name: Merge upstream (auto-resolve known conflicts)
         if: steps.check.outputs.ahead != '0'
         run: |
           set -euo pipefail
-          # 尝试自动合并; 冲突由脚本按固定模式解决
+          # Try the merge; conflicts are resolved by the script using the fixed patterns
           if git merge upstream/main --no-edit 2>/dev/null; then
-            echo "==> 无冲突, 直接合并成功"
+            echo "==> Merged cleanly, no conflicts"
           else
-            echo "==> 存在冲突, 运行自动解决脚本"
-            # 冲突文件应为 PKGBUILD(.SRCINFO 由脚本同步)
+            echo "==> Conflicts detected, running auto-resolve script"
+            # Expected conflict file: PKGBUILD (.SRCINFO is merged by git itself)
             UNRESOLVED=$(git diff --name-only --diff-filter=U)
-            echo "冲突文件: $UNRESOLVED"
-            # 自动解决失败(脚本 exit 1)时: 保留冲突标记供人工处理, 报错并停止 workflow
+            echo "Conflicted files: $UNRESOLVED"
+            # If auto-resolution fails (script exit 1): keep the conflict markers for manual
+            # handling, report an error, and stop the workflow
             if ! python3 scripts/resolve-upstream-conflicts.py PKGBUILD; then
-              echo "::error::自动解决冲突失败, 已保留冲突标记, 请人工处理。workflow 已停止。"
+              echo "::error::Auto-resolution of conflicts failed. Conflict markers left for manual handling. Workflow stopped."
               exit 1
             fi
             git add PKGBUILD
@@ -62,10 +63,10 @@ jobs:
         if: steps.check.outputs.ahead != '0'
         run: |
           git push origin main
-          echo "==> 已合并并推送到 main"
+          echo "==> Merged and pushed to main"
           echo "merged=true" >> "$GITHUB_OUTPUT"
 
       - name: No update needed
         if: steps.check.outputs.ahead == '0'
         run: |
-          echo "==> upstream 无新提交, 跳过"
+          echo "==> No upstream updates, skipping"
