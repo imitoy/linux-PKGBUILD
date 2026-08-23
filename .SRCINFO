@@ -64,7 +64,6 @@ pkgname = linux-legion-audio-fix
 	provides = WIREGUARD-MODULE
 	replaces = virtualbox-guest-modules-arch
 	replaces = wireguard-arch
-	conflicts = linux
 
 pkgname = linux-legion-audio-fix-headers
 	pkgdesc = Headers and scripts for building modules for the Linux kernel
