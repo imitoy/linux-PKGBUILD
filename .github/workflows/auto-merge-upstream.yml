@@ -49,7 +49,11 @@ jobs:
             # 冲突文件应为 PKGBUILD(.SRCINFO 由脚本同步)
             UNRESOLVED=$(git diff --name-only --diff-filter=U)
             echo "冲突文件: $UNRESOLVED"
-            python3 scripts/resolve-upstream-conflicts.py PKGBUILD
+            # 自动解决失败(脚本 exit 1)时: 保留冲突标记供人工处理, 报错并停止 workflow
+            if ! python3 scripts/resolve-upstream-conflicts.py PKGBUILD; then
+              echo "::error::自动解决冲突失败, 已保留冲突标记, 请人工处理。workflow 已停止。"
+              exit 1
+            fi
             git add PKGBUILD
             git commit --no-edit
           fi
