@@ -1,6 +1,11 @@
 # Introduction
 
-This repository is created to fix Linux Audio on the Lenovo Legion Pro 7i Gen 10 (16IAX10H) and similar devices with kernel-level patches.
+This repository provides a build script containing kernel-level patches for Arch Linux to fix audio on the Lenovo Legion Pro 7i Gen 10 (16IAX10H) and similar devices.
+
+For pre-built Arch packages, please refer to [imitoy/linux-legion-audio-fix](https://github.com/imitoy/linux-legion-audio-fix).
+
+# URL
+Patch: [nadimkobeissi/16iax10h-linux-sound-saga](https://github.com/nadimkobeissi/16iax10h-linux-sound-saga)
 
 # Instructions
 
@@ -23,3 +28,12 @@ This repository is created to fix Linux Audio on the Lenovo Legion Pro 7i Gen 10
    The `--skippgpcheck` parameter is needed since we are building a custom kernel.
 
 4. To fix your audio, you need to install [the aw88399 firmware](https://github.com/imitoy/aw88399_acf-PKGBUILD).
+5. Update grub config
+   ```bash
+   sudo grub-mkconfig -o /boot/grub/grub.cfg
+   ```
+6. Reboot
+   ```bash
+   sudo reboot
+   ```
+7. Choose linux-legion-audio-fix kernel in your grub menu.
