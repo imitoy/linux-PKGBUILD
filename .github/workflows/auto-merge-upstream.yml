@@ -1,0 +1,67 @@
+name: Auto-merge upstream kernel
+
+on:
+  schedule:
+    # 每天 02:00 UTC 检查 upstream 是否有新版本(内核更新通常 UTC 上午发布)
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  auto-merge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Fetch upstream
+        run: |
+          git remote add upstream https://gitlab.archlinux.org/archlinux/packaging/packages/linux.git
+          git fetch upstream main
+
+      - name: Check for upstream changes
+        id: check
+        run: |
+          # 当前 main 与 upstream 的关系: 若 upstream 有本地没有的提交, 需要合并
+          AHEAD=$(git rev-list --count HEAD..upstream/main)
+          echo "upstream 领先 main: $AHEAD 个提交"
+          echo "ahead=$AHEAD" >> "$GITHUB_OUTPUT"
+
+      - name: Merge upstream (auto-resolve known conflicts)
+        if: steps.check.outputs.ahead != '0'
+        run: |
+          set -euo pipefail
+          # 尝试自动合并; 冲突由脚本按固定模式解决
+          if git merge upstream/main --no-edit 2>/dev/null; then
+            echo "==> 无冲突, 直接合并成功"
+          else
+            echo "==> 存在冲突, 运行自动解决脚本"
+            # 冲突文件应为 PKGBUILD(.SRCINFO 由脚本同步)
+            UNRESOLVED=$(git diff --name-only --diff-filter=U)
+            echo "冲突文件: $UNRESOLVED"
+            python3 scripts/resolve-upstream-conflicts.py PKGBUILD
+            git add PKGBUILD
+            git commit --no-edit
+          fi
+
+      - name: Push to main
+        if: steps.check.outputs.ahead != '0'
+        run: |
+          git push origin main
+          echo "==> 已合并并推送到 main"
+          echo "merged=true" >> "$GITHUB_OUTPUT"
+
+      - name: No update needed
+        if: steps.check.outputs.ahead == '0'
+        run: |
+          echo "==> upstream 无新提交, 跳过"
