@@ -34,7 +34,6 @@ jobs:
           source ./PKGBUILD
           echo "VERSION=${pkgver}-${pkgrel}" >> $GITHUB_OUTPUT
 
-      # 目标 Release(v<版本>)已存在时,跳过编译和上传,直接进入触发部署阶段
       - name: Check if Release exists
         id: check_release
         env:
@@ -43,10 +42,9 @@ jobs:
           set -euo pipefail
           TAG="v${{ steps.get_version.outputs.VERSION }}"
           if gh release view "$TAG" >/dev/null 2>&1; then
-            echo "==> Release ${TAG} 已存在,跳过编译与上传"
+            echo "==> Release ${TAG} exists, skipping building"
             echo "skip=true" >> "$GITHUB_OUTPUT"
           else
-            echo "==> Release ${TAG} 不存在,正常构建"
             echo "skip=false" >> "$GITHUB_OUTPUT"
           fi
 
