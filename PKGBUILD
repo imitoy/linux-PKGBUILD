@@ -146,9 +146,6 @@ _package() {
     virtualbox-guest-modules-arch
     wireguard-arch
   )
-  conflicts=(
-    linux
-  )
 
   cd $_srcname
   local modulesdir="$pkgdir/usr/lib/modules/$(<version)"
