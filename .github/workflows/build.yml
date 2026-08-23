@@ -39,9 +39,11 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          REPO_OWNER="${REPO_OWNER:-imitoy}"
+          REPO="linux-PKGBUILD"
           set -euo pipefail
           TAG="v${{ steps.get_version.outputs.VERSION }}"
-          if gh release view "$TAG" >/dev/null 2>&1; then
+          if gh release view "$TAG" --repo ${REPO_OWNER}/${REPO} >/dev/null 2>&1; then
             echo "==> Release ${TAG} exists, skipping building"
             echo "skip=true" >> "$GITHUB_OUTPUT"
           else
