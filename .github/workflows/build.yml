@@ -60,7 +60,7 @@ jobs:
       - name: Build Package
         if: steps.check_release.outputs.skip != 'true'
         run: |
-          sudo -u builder makepkg -sc --noconfirm
+          sudo -u builder makepkg -sc --noconfirm || sudo -u builder makepkg -sc --noconfirm || sudo -u builder makepkg -sc --noconfirm
 
       - name: Upload to Release
         if: steps.check_release.outputs.skip != 'true'
