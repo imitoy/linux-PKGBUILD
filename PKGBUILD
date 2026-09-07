@@ -4,7 +4,7 @@ patchver=7.2.3
 
 pkgbase=linux-legion-audio-fix
 pkgver=7.2.3.arch1
-pkgrel=2
+pkgrel=3
 pkgdesc='Linux'
 url='https://github.com/archlinux/linux'
 arch=(
