@@ -1,6 +1,6 @@
 # Maintainer: Jan Alexander Steffens (heftig) <heftig@archlinux.org>
 
-patchver=7.2.3
+patchver=7.2.6
 
 pkgbase=linux-legion-audio-fix
 pkgver=7.2.6.arch2
