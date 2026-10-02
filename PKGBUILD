@@ -50,6 +50,7 @@ source=(
   https://cdn.kernel.org/pub/linux/kernel/v${pkgver%%.*}.x/${_srcname}.tar.{xz,sign}
   $url/releases/download/$_srctag/linux-$_srctag.patch.zst{,.sig}
   https://raw.githubusercontent.com/marco-giunta/legion-pro7-gen10-audio/refs/heads/legion_audio/patches/audio/legion_pro7_${patchver}.patch
+  BSTS-check.patch
 )
 source_x86_64=(config.x86_64)
 validpgpkeys=(
@@ -61,6 +62,7 @@ b2sums=('0fa304e65b0d96d6082e3040db9c974ebdbcfd54a2bc22a8841db63291787f01bf63862
         'SKIP'
         '29c08d638cf058e63f3b40d4ccba5dc0d04a51c3f2ad6073d84dd34920f550c2ca7a9dfe11f92c632eb732d0ab76e061770c3659501ac5a40fbff4bd7e052655'
         'SKIP'
+        'SKIP'
         'SKIP')
 b2sums_x86_64=('b70a9b80bec8aa71ec09e65aaf7f8949258de172b69405e5fade253795593f2dffd4189025609dd79d24ae8db06d078ee2b80090f120da1626515e8b1f9e70d5')
 
@@ -68,6 +70,7 @@ b2sums_x86_64=('b70a9b80bec8aa71ec09e65aaf7f8949258de172b69405e5fade253795593f2d
 sha256sums=('4ac34c47db2540ffb2713943f8d891ff1702e0ba6934525a493b7d1cad43145a'
             'SKIP'
             '22db40cf8a49b46518223ff78cc5b83377474948a4667ee40cacd3f1d571c609'
+            'SKIP'
             'SKIP'
             'SKIP')
 

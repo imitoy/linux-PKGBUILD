@@ -1,0 +1,170 @@
+diff --git a/include/sound/aw88399.h b/include/sound/aw88399.h
+index a1e0de6be8ea..974b5774ac2b 100644
+--- a/include/sound/aw88399.h
++++ b/include/sound/aw88399.h
+@@ -449,6 +449,11 @@
+ #define AW88399_NOISE_GATE_EN_MASK	\
+ 	(~(((1<<AW88399_NOISE_GATE_EN_BITS_LEN)-1) << AW88399_NOISE_GATE_EN_START_BIT))
+ 
++#define AW88399_EPS_EN_START_BIT	(2)
++#define AW88399_EPS_EN_BITS_LEN		(1)
++#define AW88399_EPS_EN_MASK		\
++	(~(((1 << AW88399_EPS_EN_BITS_LEN) - 1) << AW88399_EPS_EN_START_BIT))
++
+ #define AW88399_WDT_CNT_START_BIT	(0)
+ #define AW88399_WDT_CNT_BITS_LEN	(8)
+ #define AW88399_WDT_CNT_MASK		\
+diff --git a/sound/soc/codecs/aw88399-lib.c b/sound/soc/codecs/aw88399-lib.c
+index 809c2faa0c0c..1ba0147cf4df 100644
+--- a/sound/soc/codecs/aw88399-lib.c
++++ b/sound/soc/codecs/aw88399-lib.c
+@@ -183,6 +183,19 @@ static int aw_dev_check_sysst(struct aw88399 *aw88399)
+ 	else
+ 		check_val = AW88399_BIT_SYSST_SWS_CHECK;
+ 
++	/*
++	 * When an external power supply (EPS) is used to feed the amplifier
++	 * (EN_HVBAT bit in BSTCTRL10 set), the boost converter is bypassed,
++	 * and BSTS (boost finished) will never assert. Skip the BSTS check in
++	 * this case, matching the vendor driver's behavior.
++	 */
++	ret = regmap_read(aw_dev->regmap, AW88399_BSTCTRL10_REG, &reg_val);
++	if (ret)
++		return ret;
++
++	if (reg_val & (~AW88399_EPS_EN_MASK))
++		check_val &= ~AW88399_BSTS_FINISHED_VALUE;
++
+ 	/*
+ 	 * On some hardware the BSTS (boost-finished) status bit does not
+ 	 * reliably assert even when audio output is working normally.
+-- 
+2.55.0
+
+diff --git a/include/sound/aw88399.h b/include/sound/aw88399.h
+index 974b5774ac2b..38d9bd6abd8b 100644
+--- a/include/sound/aw88399.h
++++ b/include/sound/aw88399.h
+@@ -603,7 +603,6 @@ struct aw88399 {
+ 	unsigned int crc_init_val;
+ 	unsigned int vcalb_init_val;
+ 	unsigned int dither_st;
+-	bool bsts_unreliable;
+ 	bool fw_needs_reload;
+ };
+ 
+diff --git a/sound/hda/codecs/side-codecs/aw88399_hda.c b/sound/hda/codecs/side-codecs/aw88399_hda.c
+index 11cef4923024..69d113af8ae3 100644
+--- a/sound/hda/codecs/side-codecs/aw88399_hda.c
++++ b/sound/hda/codecs/side-codecs/aw88399_hda.c
+@@ -118,7 +118,6 @@ static int aw88399_hda_init(struct aw88399_hda *aw88399)
+ 	mutex_init(&core->lock);
+ 	core->reset_gpio = aw88399->reset_gpio;
+ 	core->regmap = aw88399->regmap;
+-	core->bsts_unreliable = aw88399->bsts_unreliable;
+ 
+ 	aw88399_hw_reset(core);
+ 
+@@ -155,41 +154,20 @@ static int aw88399_swap_channels(struct aw88399_hda *aw88399)
+ 	return 0;
+ }
+ 
+-static int aw88399_skip_bsts_check(struct aw88399_hda *aw88399)
+-{
+-	/*
+-	 * BSTS (boost-finished) status bit does not reliably report on
+-	 * some hardware. On certain Lenovo Legion laptops, both amps
+-	 * report BSTS=0 (boost not finished) during normal playback
+-	 * despite clean audio output. Skip BSTS in the startup status
+-	 * check to avoid false init failures.
+-	 */
+-	aw88399->bsts_unreliable = true;
+-	dev_dbg(aw88399->dev, "BSTS status check disabled\n");
+-	return 0;
+-}
+-
+-static int aw88399_apply_legion_quirks(struct aw88399_hda *aw88399)
+-{
+-	aw88399_swap_channels(aw88399);
+-	aw88399_skip_bsts_check(aw88399);
+-	return 0;
+-}
+-
+ struct aw88399_prop_model {
+ 	const char *ssid;
+ 	int (*apply_prop)(struct aw88399_hda *aw88399);
+ };
+ 
+ static const struct aw88399_prop_model aw88399_prop_model_table[] = {
+-	{ "17AA3906", aw88399_apply_legion_quirks },
+-	{ "17AA3907", aw88399_apply_legion_quirks },
+-	{ "17AA3927", aw88399_apply_legion_quirks },
+-	{ "17AA3928", aw88399_apply_legion_quirks },
+-	{ "17AA3936", aw88399_apply_legion_quirks },
+-	{ "17AA3937", aw88399_apply_legion_quirks },
+-	{ "17AA3938", aw88399_apply_legion_quirks },
+-	{ "17AA3939", aw88399_apply_legion_quirks },
++	{ "17AA3906", aw88399_swap_channels },
++	{ "17AA3907", aw88399_swap_channels },
++	{ "17AA3927", aw88399_swap_channels },
++	{ "17AA3928", aw88399_swap_channels },
++	{ "17AA3936", aw88399_swap_channels },
++	{ "17AA3937", aw88399_swap_channels },
++	{ "17AA3938", aw88399_swap_channels },
++	{ "17AA3939", aw88399_swap_channels },
+ 	{ }
+ };
+ 
+diff --git a/sound/hda/codecs/side-codecs/aw88399_hda.h b/sound/hda/codecs/side-codecs/aw88399_hda.h
+index ca0aa5279298..af71083124bd 100644
+--- a/sound/hda/codecs/side-codecs/aw88399_hda.h
++++ b/sound/hda/codecs/side-codecs/aw88399_hda.h
+@@ -19,7 +19,6 @@ struct aw88399_hda {
+ 	struct gpio_desc *reset_gpio;
+ 	struct aw_device *aw_dev;
+ 	struct aw88399 *core;
+-	bool bsts_unreliable;
+ 
+ 	const char *acpi_subsystem_id;
+ 	int index;
+diff --git a/sound/soc/codecs/aw88399-lib.c b/sound/soc/codecs/aw88399-lib.c
+index 1ba0147cf4df..75a533c9b752 100644
+--- a/sound/soc/codecs/aw88399-lib.c
++++ b/sound/soc/codecs/aw88399-lib.c
+@@ -167,9 +167,8 @@ int aw_dev_check_syspll(struct aw_device *aw_dev)
+ }
+ EXPORT_SYMBOL_GPL(aw_dev_check_syspll);
+ 
+-static int aw_dev_check_sysst(struct aw88399 *aw88399)
++static int aw_dev_check_sysst(struct aw_device *aw_dev)
+ {
+-	struct aw_device *aw_dev = aw88399->aw_pa;
+ 	unsigned int check_val;
+ 	unsigned int reg_val;
+ 	int ret, i;
+@@ -196,14 +195,6 @@ static int aw_dev_check_sysst(struct aw88399 *aw88399)
+ 	if (reg_val & (~AW88399_EPS_EN_MASK))
+ 		check_val &= ~AW88399_BSTS_FINISHED_VALUE;
+ 
+-	/*
+-	 * On some hardware the BSTS (boost-finished) status bit does not
+-	 * reliably assert even when audio output is working normally.
+-	 * Allow per-instance bypass when flagged by the side-codec driver.
+-	 */
+-	if (aw88399->bsts_unreliable)
+-		check_val &= ~AW88399_BSTS_FINISHED_VALUE;
+-
+ 	for (i = 0; i < AW88399_DEV_SYSST_CHECK_MAX; i++) {
+ 		ret = regmap_read(aw_dev->regmap, AW88399_SYSST_REG, &reg_val);
+ 		if (ret)
+@@ -732,7 +723,7 @@ static int aw88399_dev_start(struct aw88399 *aw88399)
+ 	usleep_range(AW88399_1000_US, AW88399_1000_US + 50);
+ 
+ 	/* check i2s status */
+-	ret = aw_dev_check_sysst(aw88399);
++	ret = aw_dev_check_sysst(aw_dev);
+ 	if (ret) {
+ 		dev_err(aw_dev->dev, "sysst check failed");
+ 		goto sysst_check_fail;
+-- 
+2.55.0
