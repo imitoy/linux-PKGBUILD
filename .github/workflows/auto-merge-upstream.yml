@@ -1,0 +1,72 @@
+name: Auto-merge upstream kernel
+
+on:
+  schedule:
+    # Check daily at 02:00 UTC for a new upstream release (kernel updates usually land in the morning UTC)
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  auto-merge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Fetch upstream
+        run: |
+          git remote add upstream https://gitlab.archlinux.org/archlinux/packaging/packages/linux.git
+          git fetch upstream main
+
+      - name: Check for upstream changes
+        id: check
+        run: |
+          # Relationship between current main and upstream: if upstream has commits we lack, a merge is needed
+          AHEAD=$(git rev-list --count HEAD..upstream/main)
+          echo "upstream is $AHEAD commits ahead of main"
+          echo "ahead=$AHEAD" >> "$GITHUB_OUTPUT"
+
+      - name: Merge upstream (auto-resolve known conflicts)
+        if: steps.check.outputs.ahead != '0'
+        run: |
+          set -euo pipefail
+          # Try the merge; conflicts are resolved by the script using the fixed patterns
+          if git merge upstream/main --no-edit 2>/dev/null; then
+            echo "==> Merged cleanly, no conflicts"
+          else
+            echo "==> Conflicts detected, running auto-resolve script"
+            # Expected conflict file: PKGBUILD (.SRCINFO is merged by git itself)
+            UNRESOLVED=$(git diff --name-only --diff-filter=U)
+            echo "Conflicted files: $UNRESOLVED"
+            # If auto-resolution fails (script exit 1): keep the conflict markers for manual
+            # handling, report an error, and stop the workflow
+            if ! python3 scripts/resolve-upstream-conflicts.py PKGBUILD; then
+              echo "::error::Auto-resolution of conflicts failed. Conflict markers left for manual handling. Workflow stopped."
+              exit 1
+            fi
+            git add PKGBUILD
+            git commit --no-edit
+          fi
+
+      - name: Push to main
+        if: steps.check.outputs.ahead != '0'
+        run: |
+          git push origin main
+          echo "==> Merged and pushed to main"
+          echo "merged=true" >> "$GITHUB_OUTPUT"
+
+      - name: No update needed
+        if: steps.check.outputs.ahead == '0'
+        run: |
+          echo "==> No upstream updates, skipping"
